@@ -46,5 +46,6 @@ public:
 	void BeginPlay() override;
 
 public:
+	UFUNCTION()
 	void SpawnEntity();
 };
