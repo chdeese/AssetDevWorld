@@ -52,9 +52,17 @@ class ASSETDEVWORLD_API AGrid : public AActor
 	
 private:
 	TArray<FGridChunk*> Chunks;
-
+	static const int ChunkRootCM = 150;
 public:	
 	virtual void BeginPlay() override;
+
+	AGrid();
+
+	void init(int width, int length);
+
+	//AGrid(int width, int length);
+	////maybe swap because of unreal xyz cordinate scheme.
+	//AGrid(int width, int height, int length);
 
 	void SetVisited(ARoom* room);
 	void CarvePassageways();

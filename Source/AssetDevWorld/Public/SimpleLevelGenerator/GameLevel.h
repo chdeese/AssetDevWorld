@@ -7,6 +7,7 @@
 #include "GameLevel.generated.h"
 
 class ARoom;
+//class AGrid;
 class URoomDataAsset;
 
 UCLASS()
@@ -14,8 +15,13 @@ class ASSETDEVWORLD_API AGameLevel : public AActor
 {
 	GENERATED_BODY()
 	
+private:
+	bool bAlignEntry;
+	bool bBuildOnPlay;
+	FVector m_entryPosition;
+
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<ARoom*> RoomInstances;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -25,7 +31,7 @@ public:
 	TArray<URoomDataAsset*> BeginningRooms;
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AGrid Grid;*/
+	AGrid* Grid;*/
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxActiveEntities;
@@ -54,6 +60,8 @@ public:
 public:	
 	// creates a new game level
 	AGameLevel();
+
+	AGameLevel(FVector entryPosition);
 
 	virtual void BeginPlay() override;
 
