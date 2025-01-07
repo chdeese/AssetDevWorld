@@ -13,7 +13,8 @@ struct FGridChunk
 {
 	GENERATED_BODY()
 public:
-	TArray<FGridChunkEdge> Edges;
+	TArray<FGridChunkEdge*>* Edges;
+	FVector Position;
 	FGridChunk* Previous;
 	bool bVisited;
 	bool bSpawned;
@@ -53,10 +54,12 @@ class ASSETDEVWORLD_API AGrid : public AActor
 private:
 	TArray<FGridChunk*> Chunks;
 	static const int ChunkRootCM = 150;
+	FGridIterator* Iterator;
 public:	
 	virtual void BeginPlay() override;
 
 	AGrid();
+	~AGrid();
 
 	void init(int width, int length);
 
