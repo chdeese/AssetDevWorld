@@ -158,6 +158,27 @@ void AGrid::ConnectChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 	}
 }
 
+void AGrid::SetVisited(ARoom* room)
+{
+}
+
+void AGrid::CarvePassageways()
+{
+
+}
+
+void AGrid::ConnectDoorways()
+{
+}
+
+void AGrid::SpawnAssets()
+{
+}
+
+void AGrid::Cleanup()
+{
+}
+
 //AGrid::AGrid(int width, int length)
 //{
 //}

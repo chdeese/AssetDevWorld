@@ -7,7 +7,7 @@
 #include "GameLevel.generated.h"
 
 class ARoom;
-//class AGrid;
+class AGrid;
 class URoomDataAsset;
 
 UCLASS()
@@ -19,6 +19,8 @@ private:
 	bool bAlignEntry;
 	bool bBuildOnPlay;
 	FVector m_entryPosition;
+	float UniqueRoomArea;
+	TArray<ARoom*> RoomsToSpawn;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -30,8 +32,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<URoomDataAsset*> BeginningRooms;
 
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AGrid* Grid;*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<URoomDataAsset*> PriorityRooms;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	AGrid* Grid;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxActiveEntities;
@@ -47,6 +52,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSpawnUniqueRooms;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float UniqueRoomPercent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bFlatMode;

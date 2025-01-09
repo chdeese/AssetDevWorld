@@ -39,6 +39,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnCooldownSeconds;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float BoundsArea;
+
 public:	
 	// Sets default values for this actor's properties
 	ARoom();

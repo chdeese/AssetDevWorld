@@ -4,7 +4,7 @@
 #include "SimpleLevelGenerator/GameLevel.h"
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/RoomDataAsset.h"
-//#include "SimpleLevelGenerator/Grid.h"
+ #include "SimpleLevelGenerator/Grid.h"
 
 AGameLevel::AGameLevel()
 {
@@ -17,6 +17,7 @@ AGameLevel::AGameLevel()
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	RoomsToSpawn = TArray<ARoom*>();
 
 	bAlignEntry = false;
 }
@@ -33,6 +34,7 @@ AGameLevel::AGameLevel(FVector entryPosition)
 
 	bAlignEntry = true;
 	m_entryPosition = entryPosition;
+	RoomsToSpawn = TArray<ARoom*>();
 
 }
 
@@ -66,12 +68,56 @@ void AGameLevel::BeginPlay()
 
 void AGameLevel::Warmup()
 {
-	
+	//uses int32
+	FMath::SRandInit(FDateTime::Now().GetSecond());
 }
 
 void AGameLevel::SelectRooms()
 {
-	
+	float LevelBoundingBoxArea = b3DMode ? 
+		MaxWidth * MaxLength * MaxHeight : 
+		MaxWidth * MaxLength;
+	float PassagewayArea = 0.25f;
+	float AssetRoomArea = LevelBoundingBoxArea * Density;
+
+	//subtracts passageway area from the total room area
+	AssetRoomArea -= LevelBoundingBoxArea * PassagewayArea;
+	UniqueRoomArea = AssetRoomArea * UniqueRoomPercent;
+	AssetRoomArea -= UniqueRoomArea;
+
+	ARoom* Room;
+	float RoomArea;
+	float RandomNum;
+	TArray<ARoom*> RoomSelection = TArray<ARoom*>();
+	for (float CurrentFilledArea = 0; CurrentFilledArea < AssetRoomArea; CurrentFilledArea += RoomArea)
+	{
+		Room = nullptr;
+		RoomArea = 0;
+		if (!PriorityRooms.IsEmpty())
+		{
+			for (auto i = PriorityRooms.begin(); i != PriorityRooms.end(); ++i)
+			{
+				Room = (*i)->RoomAsset;
+				RoomArea += Room->BoundsArea;
+				RoomsToSpawn.Add(Room);
+			}
+			Room = nullptr;
+			PriorityRooms.Empty();
+			continue;
+		}
+
+		if(RoomSelection.IsEmpty())
+			RoomSelection = TArray<ARoom*>(RoomsToSpawn);
+
+		RandomNum = FMath::SRand();
+		RandomNum *= RoomSelection.Num() - 1;
+
+		Room = RoomSelection[RandomNum];
+		RoomSelection.RemoveAt(RandomNum, EAllowShrinking::Yes);
+
+		RoomArea += Room->BoundsArea;
+		RoomsToSpawn.Add(Room);
+	}
 }
 
 void AGameLevel::SpawnRooms()
@@ -96,12 +142,14 @@ void AGameLevel::ConnectRooms()
 
 void AGameLevel::Cleanup()
 {
-
+	AGameLevel::~AGameLevel();
 }
 
 void AGameLevel::Finalize()
 {
-
+	//check if priority rooms, a navmesh from start->end, and other stuff exists.
+	AGameLevel::Cleanup();
+	//other stuff
 }
 
 void AGameLevel::UpdateEntitySpawns()
