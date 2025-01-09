@@ -67,7 +67,6 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
-	void ConnectChunks(FGridChunk* origin, FGridChunk* target);
 	void SetVisited(ARoom* room);
 	void CarvePassageways();
 	void ConnectDoorways();

@@ -24,7 +24,7 @@ AGrid::~AGrid()
 }
 
 
-//flat mode
+//2D
 void AGrid::init(int width, int length)
 {
 	FVector GridLocation = this->GetActorLocation();
@@ -49,7 +49,7 @@ void AGrid::init(int width, int length)
 
 	enum NextChunk
 	{
-		Right, Left, Forward
+		Right, Left, Up
 	};
 	NextChunk NextChunkDirection = NextChunk::Right;
 
@@ -58,118 +58,47 @@ void AGrid::init(int width, int length)
 
 	int CurrentRow = 0;
 	int CurrentColumn = 0;
-	FGridChunk* lastMadeChunk = nullptr;
+	FGridChunk* lastMadeChunk;
 	bool bForwards = true;
-	while (!bGridFilled)
+	while (CurrentRow > CubeCountY)
 	{
-		//exits loop
-		if (NewChunkPosition.Y > GridTopY)
-		{
-			bGridFilled = true;
-			continue;
-		}
-
-
 		FGridChunk* newChunk = new FGridChunk();
-		newChunk->Edges = new TArray<FGridChunkEdge*>();
 		newChunk->Position = NewChunkPosition;
 		newChunk->Previous = nullptr;
 		newChunk->bVisited = false;
 		newChunk->bSpawned = false;
 
-
-		//adds new edges
-		{
-			//right
-			FGridChunkEdge* newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(1, 0, 0);
-			newChunk->Edges->Add(newEdge);
-
-			//left
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(-1, 0, 0);
-			newChunk->Edges->Add(newEdge);
-
-			//forwards
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(0, 1, 0);
-			newChunk->Edges->Add(newEdge);
-
-			//backwards
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(0, -1, 0);
-			newChunk->Edges->Add(newEdge);
-		}
-
-		if (lastMadeChunk) 
-			ConnectChunks(lastMadeChunk, newChunk);
-
 		Chunks.Add(newChunk);
+
+		//adds only 2D edges
+		FGridChunkEdge* newEdge = new FGridChunkEdge();
+		lastMadeChunk = newChunk;
+
 
 		if (CurrentColumn >= CubeCountX || CurrentColumn < 0)
 		{
-			NextChunkDirection = NextChunk::Forward;
+			NextChunkDirection = NextChunk::Up;
 			bForwards = !bForwards;
 			CurrentRow++;
 		}
+
 
 		switch (NextChunkDirection)
 		{
 		case NextChunk::Right:
 			NewChunkPosition.X += 150;
 			CurrentColumn++;
-			{
-
-			}
 			break;
 		case NextChunk::Left:
 			NewChunkPosition.X -= 150;
 			CurrentColumn--;
-			{
-
-			}
 			break;
-		case NextChunk::Forward:
+		case NextChunk::Up:
 			NewChunkPosition.Y += 150;
 			CurrentRow++;
 			NextChunkDirection = bForwards ? NextChunk::Right : NextChunk::Left;
-			{
-
-			}
 			break;
 		}	
-	}
-}
-
-//only works if axis aligned with the unreal world.
-void AGrid::ConnectChunks(FGridChunk* origin, FGridChunk* target)
-{
-	FVector originToTarget = origin->Position - target->Position;
-	originToTarget = originToTarget.GetUnsafeNormal();
-
-	auto o = origin->Edges->begin();
-	auto oEnd = origin->Edges->end();
-	auto t = target->Edges->begin();
-	auto tEnd = target->Edges->end();
-
-	//iterates fully between each list
-	while (o != oEnd || t != tEnd)
-	{ 
-		//forces axis alignement requirment
-		FVector difference = (*o)->Normal - originToTarget;
-		if (difference.Size() < 0.1f)
-			(*o)->Target = target;
-
-		difference = (*t)->Normal - (-originToTarget);
-		if (difference.Size() < 0.1f)
-			(*t)->Target = origin;
-
-		++o;
-		++t;
 	}
 }
 
