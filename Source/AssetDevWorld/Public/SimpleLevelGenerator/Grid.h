@@ -35,15 +35,9 @@ struct FGridIterator
 {
 	GENERATED_BODY()
 public:
-	void (*IterDirection)();
-public:
 	FGridChunk* Target;
-	void Up() {}
-	void Down() {}
-	void Left() {}
-	void Right() {}
-	void Forward() {}
-	void Backward() {}
+	FGridChunk* operator*() { return Target; }
+	void Iterate(FVector Direction) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if ((Direction - (*i)->Normal).Size() < 0.1f ) Target = (*i)->Target; } }
 };
 
 UCLASS()
@@ -67,6 +61,7 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
+	FGridChunk* GetAdjacentChunk(FGridChunk* origin);
 	void ConnectChunks(FGridChunk* origin, FGridChunk* target);
 	void SetVisited(ARoom* room);
 	void CarvePassageways();

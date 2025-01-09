@@ -27,59 +27,43 @@ AGrid::~AGrid()
 //flat mode
 void AGrid::init(int width, int length)
 {
-	FVector GridLocation = this->GetActorLocation();
-
-	int CubeCountX = width / ChunkRootCM;
-	int CubeCountY = length / ChunkRootCM;
-
-	bool bIsXCountEven = CubeCountX % 2 != 0;
-	bool bIsYCountEven = CubeCountY % 2 != 0;
-	////forces cubeCountX to be an even number
-	//cubeCountX = bIsXCountEven ? cubeCountX : cubeCountX - 1;
-	////forces cubeCountY to be an even number
-	//cubeCountY = bIsYCountEven ? cubeCountY : cubeCountY - 1;
-
-	// implicit casting lost data is accounted for
-	FVector NewChunkPosition = GridLocation - FVector(ChunkRootCM * (CubeCountX / 2.0), ChunkRootCM * (CubeCountY / 2.0), 0);
-
-	//offset towards center of Chunk area.
-	NewChunkPosition.X += ChunkRootCM / 2.0;
-	NewChunkPosition.Y += ChunkRootCM / 2.0;
-
-
 	enum NextChunk
 	{
 		Right, Left, Forward
 	};
-	NextChunk NextChunkDirection = NextChunk::Right;
 
-	float GridTopY = GridLocation.Y + (length / 2);
-	bool bGridFilled = false;
+	// implicit casting lost data is accounted for
+	int CubeCountX = width / ChunkRootCM;
+	int CubeCountY = length / ChunkRootCM;
+
+	NextChunk NextChunkDirection = NextChunk::Right;
+	FVector NewChunkPosition = this->GetActorLocation() - FVector(ChunkRootCM * (CubeCountX / 2.0), ChunkRootCM * (CubeCountY / 2.0), 0);
+	//offset towards center of Chunk area.
+	NewChunkPosition.X += ChunkRootCM / 2.0;
+	NewChunkPosition.Y += ChunkRootCM / 2.0;
 
 	int CurrentRow = 0;
 	int CurrentColumn = 0;
-	FGridChunk* lastMadeChunk = nullptr;
+	bool bGridFilled = false;
 	bool bForwards = true;
+	FGridChunk* lastMadeChunk = nullptr;
 	while (!bGridFilled)
 	{
 		//exits loop
-		if (NewChunkPosition.Y > GridTopY)
+		if (CurrentRow == CubeCountY)
 		{
 			bGridFilled = true;
 			continue;
 		}
 
-
 		FGridChunk* newChunk = new FGridChunk();
-		newChunk->Edges = new TArray<FGridChunkEdge*>();
 		newChunk->Position = NewChunkPosition;
 		newChunk->Previous = nullptr;
 		newChunk->bVisited = false;
 		newChunk->bSpawned = false;
-
-
-		//adds new edges
 		{
+			newChunk->Edges = new TArray<FGridChunkEdge*>();
+
 			//right
 			FGridChunkEdge* newEdge = new FGridChunkEdge();
 			newEdge->Target = nullptr;
@@ -105,71 +89,72 @@ void AGrid::init(int width, int length)
 			newChunk->Edges->Add(newEdge);
 		}
 
+		// connects last made chunk
 		if (lastMadeChunk) 
 			ConnectChunks(lastMadeChunk, newChunk);
 
+		// connects lower adjacent chunks
+		if (CurrentRow > 0 && CurrentColumn != 0 && CurrentColumn != CubeCountX - 1)
+		{
+			Iterator->Target = lastMadeChunk;
+			Iterator->Iterate(FVector(0, -1, 0));
+			//iterate in approximate normal direction
+			Iterator->Iterate((newChunk->Position - lastMadeChunk->Position).GetUnsafeNormal());
+
+			ConnectChunks(Iterator->Target, newChunk);
+		}
+
 		Chunks.Add(newChunk);
 
-		if (CurrentColumn >= CubeCountX || CurrentColumn < 0)
-		{
+		//if heading out of bounds head forward to the next row
+		if (CurrentColumn == CubeCountX - 1 || CurrentColumn == 0)
 			NextChunkDirection = NextChunk::Forward;
-			bForwards = !bForwards;
-			CurrentRow++;
-		}
 
 		switch (NextChunkDirection)
 		{
 		case NextChunk::Right:
 			NewChunkPosition.X += 150;
 			CurrentColumn++;
-			{
-
-			}
 			break;
 		case NextChunk::Left:
 			NewChunkPosition.X -= 150;
 			CurrentColumn--;
-			{
-
-			}
 			break;
 		case NextChunk::Forward:
 			NewChunkPosition.Y += 150;
 			CurrentRow++;
+			bForwards = !bForwards;
 			NextChunkDirection = bForwards ? NextChunk::Right : NextChunk::Left;
-			{
-
-			}
 			break;
 		}	
 	}
 }
 
 //only works if axis aligned with the unreal world.
-void AGrid::ConnectChunks(FGridChunk* origin, FGridChunk* target)
+void AGrid::ConnectChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 {
-	FVector originToTarget = origin->Position - target->Position;
-	originToTarget = originToTarget.GetUnsafeNormal();
+	FVector C1ToC2 = Chunk2->Position - Chunk1->Position;
+	C1ToC2 = C1ToC2.GetUnsafeNormal();
 
-	auto o = origin->Edges->begin();
-	auto oEnd = origin->Edges->end();
-	auto t = target->Edges->begin();
-	auto tEnd = target->Edges->end();
+	auto C1 = Chunk1->Edges->begin();
+	auto C1End = Chunk2->Edges->end();
+	auto C2 = Chunk1->Edges->begin();
+	auto C2End = Chunk2->Edges->end();
 
 	//iterates fully between each list
-	while (o != oEnd || t != tEnd)
+	while (C1 != C1End || C2 != C2End)
 	{ 
 		//forces axis alignement requirment
-		FVector difference = (*o)->Normal - originToTarget;
+		FVector difference = (*C1)->Normal - C1ToC2;
 		if (difference.Size() < 0.1f)
-			(*o)->Target = target;
+			(*C1)->Target = Chunk2;
 
-		difference = (*t)->Normal - (-originToTarget);
+		difference = (*C2)->Normal - (-C1ToC2);
 		if (difference.Size() < 0.1f)
-			(*t)->Target = origin;
+			(*C2)->Target = Chunk1;
 
-		++o;
-		++t;
+		++C1;
+		++C2;
 	}
 }
 
