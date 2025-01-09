@@ -18,13 +18,13 @@ class ASSETDEVWORLD_API URoomTemplateDataAsset : public UPrimaryDataAsset
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AActor* WallAsset;
+	TSubclassOf<AActor> WallAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AActor* FloorAsset;
+	TSubclassOf<AActor> FloorAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AActor* CeilingAsset;
+	TSubclassOf<AActor> CeilingAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AActor* DoorAsset;
+	TSubclassOf<AActor> DoorAsset;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int SpawnersPerRoom;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

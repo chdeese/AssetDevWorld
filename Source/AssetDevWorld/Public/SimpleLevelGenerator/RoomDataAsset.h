@@ -19,5 +19,5 @@ class ASSETDEVWORLD_API URoomDataAsset : public UPrimaryDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ARoom* RoomAsset;
+	TSubclassOf<ARoom> RoomAsset;
 };

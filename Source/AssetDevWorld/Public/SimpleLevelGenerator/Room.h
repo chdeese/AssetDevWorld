@@ -8,7 +8,7 @@
 
 class UEntityDataAsset;
 
-UCLASS()
+UCLASS(Placeable)
 class ASSETDEVWORLD_API ARoom : public AActor
 {
 	GENERATED_BODY()
@@ -41,6 +41,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float BoundsArea;
+
+	bool operator<(ARoom const& rhs);
+
+	bool operator>(ARoom const& rhs);
 
 public:	
 	// Sets default values for this actor's properties

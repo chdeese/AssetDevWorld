@@ -4,7 +4,8 @@
 #include "SimpleLevelGenerator/GameLevel.h"
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/RoomDataAsset.h"
- #include "SimpleLevelGenerator/Grid.h"
+#include "SimpleLevelGenerator/RoomTemplateDataAsset.h"
+#include "SimpleLevelGenerator/Grid.h"
 
 AGameLevel::AGameLevel()
 {
@@ -17,7 +18,7 @@ AGameLevel::AGameLevel()
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	RoomsToSpawn = TArray<ARoom*>();
+	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
 
 	bAlignEntry = false;
 }
@@ -34,7 +35,7 @@ AGameLevel::AGameLevel(FVector entryPosition)
 
 	bAlignEntry = true;
 	m_entryPosition = entryPosition;
-	RoomsToSpawn = TArray<ARoom*>();
+	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
 
 }
 
@@ -77,18 +78,20 @@ void AGameLevel::SelectRooms()
 	float LevelBoundingBoxArea = b3DMode ? 
 		MaxWidth * MaxLength * MaxHeight : 
 		MaxWidth * MaxLength;
-	float PassagewayArea = 0.25f;
+	float PassagewayAreaPercent = 0.25f;
+	float EmptyAreaPercent = 0.1f;
 	float AssetRoomArea = LevelBoundingBoxArea * Density;
 
-	//subtracts passageway area from the total room area
-	AssetRoomArea -= LevelBoundingBoxArea * PassagewayArea;
+	//subtracts passageway area and empty area from the total room area
+	AssetRoomArea -= LevelBoundingBoxArea * PassagewayAreaPercent;
+	AssetRoomArea -= LevelBoundingBoxArea * EmptyAreaPercent;
 	UniqueRoomArea = AssetRoomArea * UniqueRoomPercent;
 	AssetRoomArea -= UniqueRoomArea;
 
+	TSubclassOf<ARoom> RoomClass;
 	ARoom* Room;
 	float RoomArea;
 	float RandomNum;
-	TArray<ARoom*> RoomSelection = TArray<ARoom*>();
 	for (float CurrentFilledArea = 0; CurrentFilledArea < AssetRoomArea; CurrentFilledArea += RoomArea)
 	{
 		Room = nullptr;
@@ -97,32 +100,51 @@ void AGameLevel::SelectRooms()
 		{
 			for (auto i = PriorityRooms.begin(); i != PriorityRooms.end(); ++i)
 			{
-				Room = (*i)->RoomAsset;
+				RoomClass = (*(*i)->RoomAsset);
+				//casted only for BoundsArea float value
+				Room = Cast<ARoom>(RoomClass->GetDefaultObject());
 				RoomArea += Room->BoundsArea;
-				RoomsToSpawn.Add(Room);
+				RoomsToSpawn.Add(RoomClass);
 			}
 			Room = nullptr;
 			PriorityRooms.Empty();
 			continue;
 		}
 
+		TArray<TSubclassOf<ARoom>> RoomSelection = TArray<TSubclassOf<ARoom>>();
 		if(RoomSelection.IsEmpty())
-			RoomSelection = TArray<ARoom*>(RoomsToSpawn);
+			RoomSelection = TArray<TSubclassOf<ARoom>>(RoomsToSpawn);
 
 		RandomNum = FMath::SRand();
-		RandomNum *= RoomSelection.Num() - 1;
+		RandomNum *= OptionalRooms.Num() - 1;
 
-		Room = RoomSelection[RandomNum];
 		RoomSelection.RemoveAt(RandomNum, EAllowShrinking::Yes);
 
 		RoomArea += Room->BoundsArea;
-		RoomsToSpawn.Add(Room);
+		RoomsToSpawn.Add(RoomClass);
 	}
 }
 
+//places the largest rooms first
 void AGameLevel::SpawnRooms()
 {
+	// smallest -> largest (by area)
+	RoomsToSpawn.Sort();
+	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty() ; RoomsToSpawn.Remove(Room))
+	{
+		UClass* actor = TSubclassOf<AActor>();
 
+		ARoom* RoomToSpawn = Room.GetDefaultObject();
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		//needs to be replaced with custom location.
+		FVector RoomSpawnLocation = GetActorLocation();
+
+		GetWorld()->SpawnActor<ARoom>(*Room, RoomSpawnLocation, FRotator::ZeroRotator, SpawnParams);
+	}
 }
 
 void AGameLevel::GenerateNewRooms()

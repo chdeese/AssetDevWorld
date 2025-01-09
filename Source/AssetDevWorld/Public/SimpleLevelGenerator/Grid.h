@@ -40,7 +40,7 @@ public:
 	void Iterate(FVector Direction) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if ((Direction - (*i)->Normal).Size() < 0.1f ) Target = (*i)->Target; } }
 };
 
-UCLASS()
+UCLASS(Placeable)
 class ASSETDEVWORLD_API AGrid : public AActor
 {
 	GENERATED_BODY()
@@ -61,7 +61,6 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
-	FGridChunk* GetAdjacentChunk(FGridChunk* origin);
 	void ConnectChunks(FGridChunk* origin, FGridChunk* target);
 	void SetVisited(ARoom* room);
 	void CarvePassageways();

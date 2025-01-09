@@ -9,8 +9,9 @@
 class ARoom;
 class AGrid;
 class URoomDataAsset;
+class URoomTemplateDataAsset;
 
-UCLASS()
+UCLASS(Placeable)
 class ASSETDEVWORLD_API AGameLevel : public AActor
 {
 	GENERATED_BODY()
@@ -20,14 +21,17 @@ private:
 	bool bBuildOnPlay;
 	FVector m_entryPosition;
 	float UniqueRoomArea;
-	TArray<ARoom*> RoomsToSpawn;
+	TArray<TSubclassOf<ARoom>> RoomsToSpawn;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<ARoom*> RoomInstances;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<UPrimaryDataAsset*> RoomData;
+	TArray<URoomTemplateDataAsset*> RoomTemplates;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<URoomDataAsset*> OptionalRooms;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<URoomDataAsset*> BeginningRooms;

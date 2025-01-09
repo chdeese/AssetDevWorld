@@ -16,5 +16,5 @@ class ASSETDEVWORLD_API UEntityDataAsset : public UPrimaryDataAsset
 	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	AActor* EntityAsset;
+	TSubclassOf<AActor> EntityAsset;
 };

@@ -4,6 +4,16 @@
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/EntityDataAsset.h"
 
+bool ARoom::operator<(ARoom const& rhs)
+{
+	return BoundsArea < rhs.BoundsArea;
+}
+
+bool ARoom::operator>(ARoom const& rhs)
+{
+	return BoundsArea > rhs.BoundsArea;
+}
+
 // Sets default values
 ARoom::ARoom()
 {
