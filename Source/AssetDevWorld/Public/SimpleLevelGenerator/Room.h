@@ -7,13 +7,15 @@
 #include "Room.generated.h"
 
 class UEntityDataAsset;
+struct FGridChunk;
 
 UCLASS(Placeable)
 class ASSETDEVWORLD_API ARoom : public AActor
 {
 	GENERATED_BODY()
 	
-
+private:
+	TArray<FGridChunk*> Chunks;
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<AActor*> OwnedActiveEntities;

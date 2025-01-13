@@ -7,18 +7,7 @@
 #include "Grid.generated.h"
 
 class ARoom;
-
-USTRUCT()
-struct FGridChunk
-{
-	GENERATED_BODY()
-public:
-	TArray<FGridChunkEdge*>* Edges;
-	FVector Position;
-	FGridChunk* Previous;
-	bool bVisited;
-	bool bSpawned;
-};
+class AGameLevel;
 
 USTRUCT()
 struct FGridChunkEdge
@@ -29,6 +18,22 @@ public:
 	FVector Normal;
 };
 
+USTRUCT()
+struct FGridChunk
+{
+	GENERATED_BODY()
+public:
+	TArray<FGridChunkEdge*>* Edges;
+	void GetEdge(FGridChunkEdge& edge, FVector normal) { 
+		for (auto i = Edges->begin(); i != Edges->end(); ++i) 
+		{ if ((*i)->Normal.Dot(normal) > 0.9f) edge = *(*i); return; } /*cant find edge*/edge = FGridChunkEdge(); return; }
+	FVector Position;
+	FGridChunk* Previous;
+	bool bVisited;
+	bool bSpawned;
+};
+
+
 //used by AGrid to iterate through FGridChunk containers
 USTRUCT()
 struct FGridIterator
@@ -37,7 +42,7 @@ struct FGridIterator
 public:
 	FGridChunk* Target;
 	FGridChunk* operator*() { return Target; }
-	void Iterate(AGrid::Directions dir) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if ((AGrid::LastMadeInstance->IterDirections.FindRef(dir) - (*i)->Normal).Size() < 0.1f) Target = (*i)->Target; } };
+	bool Iterate(FVector dir) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if (0.1f > (dir - (*i)->Normal).Size()) { Target = (*i)->Target; return true; } } /*cant find dir*/return false; };
 };
 
 UCLASS(Placeable)
@@ -46,11 +51,12 @@ class ASSETDEVWORLD_API AGrid : public AActor
 	GENERATED_BODY()
 	
 private:
-	TArray<FGridChunk*> Chunks;
+	TArray<FGridChunk*>* Chunks;
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;
 	FGridChunk* StartChunk;
 	FGridChunk* Start() { return StartChunk; };
+	AGameLevel* GameLevel;
 public:	
 	enum Directions
 	{
@@ -61,25 +67,29 @@ public:
 		Backwards,
 		Forwards
 	};
-	static TMap<Directions, FVector> IterDirections;
-	static AGrid* LastMadeInstance;
+	TMap<AGrid::Directions, FVector> IterDirections = { {Directions::Up, FVector(0, 0, 1)}, {Directions::Down, FVector(0, 0, -1)},
+					   {Directions::Forwards, FVector(0, 1, 0)}, {Directions::Backwards, FVector(0, -1, 0)},
+					   {Directions::Left, FVector(-1, 0, 0)}, {Directions::Right, FVector(1, 0, 0)} };
+
 
 	virtual void BeginPlay() override;
 
 	AGrid();
 	~AGrid();
 
-	void init(int width, int length);
+	void init(AGameLevel* level, int width, int length);
 
 	//AGrid(int width, int length);
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
 	FGridChunk* GetChunkNearest(FVector position);
-	Directions NextDirectionTowards(FVector direction);
+	FVector NextDirectionTowards(FVector direction);
 	void ConnectAdjacentChunks(FGridChunk* origin, FGridChunk* target);
 	bool AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2);
-	void ReserveChunks(ARoom* room);
+	bool IsChunkWithinRoomBounds(ARoom* Room, FGridChunk* Chunk);
+	bool ShouldBeReserved(FGridChunk* Chunk, ARoom* Room);
+	void ReserveChunksInRoom(ARoom* room);
 	void CarvePassageways();
 	void ConnectDoorways();
 	void SpawnAssets();

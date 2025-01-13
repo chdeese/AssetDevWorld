@@ -3,6 +3,7 @@
 
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/EntityDataAsset.h"
+#include "SimpleLevelGenerator/Grid.h"
 
 bool ARoom::operator<(ARoom const& rhs)
 {
@@ -20,6 +21,7 @@ ARoom::ARoom()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	Chunks = TArray<FGridChunk*>();
 }
 
 // Called when the game starts or when spawned
