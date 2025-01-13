@@ -15,6 +15,12 @@ void AGrid::BeginPlay()
 AGrid::AGrid()
 {
 	Iterator = new FGridIterator();
+	TMap<AGrid::Directions, FVector> IterDirections = TMap<AGrid::Directions, FVector>();
+	IterDirections = { {Directions::Up, FVector(0, 0, 1)}, {Directions::Down, FVector(0, 0, -1)},
+					   {Directions::Forwards, FVector(0, 1, 0)}, {Directions::Backwards, FVector(0, -1, 0)},
+					   {Directions::Left, FVector(-1, 0, 0)}, {Directions::Right, FVector(1, 0, 0)} };
+
+	LastMadeInstance = this;
 }
 
 AGrid::~AGrid()
@@ -46,6 +52,7 @@ void AGrid::init(int width, int length)
 	int CurrentColumn = 0;
 	bool bGridFilled = false;
 	bool bForwards = true;
+	bool bFirstIteration = true;
 	FGridChunk* lastMadeChunk = nullptr;
 	while (!bGridFilled)
 	{
@@ -89,19 +96,21 @@ void AGrid::init(int width, int length)
 			newChunk->Edges->Add(newEdge);
 		}
 
+		//set start chunk if this is the first iteration
+		if (bFirstIteration) StartChunk = newChunk, bFirstIteration = !bFirstIteration;
+
 		// connects last made chunk
 		if (lastMadeChunk) 
-			ConnectChunks(lastMadeChunk, newChunk);
+			ConnectAdjacentChunks(lastMadeChunk, newChunk);
 
 		// connects lower adjacent chunks
 		if (CurrentRow > 0 && CurrentColumn != 0 && CurrentColumn != CubeCountX - 1)
 		{
 			Iterator->Target = lastMadeChunk;
-			Iterator->Iterate(FVector(0, -1, 0));
 			//iterate in approximate normal direction
 			Iterator->Iterate((newChunk->Position - lastMadeChunk->Position).GetUnsafeNormal());
 
-			ConnectChunks(Iterator->Target, newChunk);
+			ConnectAdjacentChunks(Iterator->Target, newChunk);
 		}
 
 		Chunks.Add(newChunk);
@@ -130,8 +139,42 @@ void AGrid::init(int width, int length)
 	}
 }
 
+FGridChunk* AGrid::GetChunkNearest(FVector position)
+{
+	Iterator->Target = StartChunk;
+
+	FVector VectorTo = position - Iterator->Target->Position;
+	FVector ChunkBorderPosTowardsPos = VectorTo.GetUnsafeNormal() * ChunkRootCM;
+	if (VectorTo.Size() < ChunkBorderPosTowardsPos.Size())
+		return Iterator->Target;
+
+	bool keepgoing;
+	while (keepgoing)
+	{
+		Iterator->Iterate(NextDirectionTowards(position));
+	}
+}
+
+AGrid::Directions AGrid::NextDirectionTowards(FVector direction)
+{
+	if (FMath::Abs(direction.X) > FMath::Abs(direction.Y))
+	{
+		if (direction.X > 0)
+			return Directions::Right;
+		else
+			return Directions::Left;
+	}
+	else
+	{
+		if (direction.Y > 0)
+			return Directions::Up;
+		else
+			return Directions::Down;
+	}
+}
+
 //only works if axis aligned with the unreal world.
-void AGrid::ConnectChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
+void AGrid::ConnectAdjacentChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 {
 	FVector C1ToC2 = Chunk2->Position - Chunk1->Position;
 	C1ToC2 = C1ToC2.GetUnsafeNormal();
@@ -158,8 +201,29 @@ void AGrid::ConnectChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 	}
 }
 
-void AGrid::SetVisited(ARoom* room)
+bool AGrid::AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2)
 {
+	FVector DirectionTo = (Chunk2->Position - Chunk1->Position).GetUnsafeNormal();
+	for (auto i = Chunk1->Edges->begin(); i != Chunk1->Edges->end(); ++i)
+	{
+		if (DirectionTo.Dot((*i)->Normal) > 0.9f)
+			return (*i)->Target == Chunk2 ? true : false;
+	}
+	return false;
+}
+
+void AGrid::ReserveChunks(ARoom* room)
+{
+	bool bRoomCenterChunkFound = false;
+	float DistanceTo;
+	float CurrentArea;
+
+	for (float VisitedArea = 0; !bRoomCenterChunkFound; VisitedArea += CurrentArea)
+	{
+		if (VisitedArea == 0)
+			Iterator->Target = GetChunkNearest(room->GetActorLocation());
+	
+	}
 }
 
 void AGrid::CarvePassageways()

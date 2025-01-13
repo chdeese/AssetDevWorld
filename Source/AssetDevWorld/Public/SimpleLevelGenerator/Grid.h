@@ -37,7 +37,7 @@ struct FGridIterator
 public:
 	FGridChunk* Target;
 	FGridChunk* operator*() { return Target; }
-	void Iterate(FVector Direction) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if ((Direction - (*i)->Normal).Size() < 0.1f ) Target = (*i)->Target; } }
+	void Iterate(AGrid::Directions dir) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if ((AGrid::LastMadeInstance->IterDirections.FindRef(dir) - (*i)->Normal).Size() < 0.1f) Target = (*i)->Target; } };
 };
 
 UCLASS(Placeable)
@@ -49,7 +49,21 @@ private:
 	TArray<FGridChunk*> Chunks;
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;
+	FGridChunk* StartChunk;
+	FGridChunk* Start() { return StartChunk; };
 public:	
+	enum Directions
+	{
+		Up,
+		Left,
+		Down,
+		Right,
+		Backwards,
+		Forwards
+	};
+	static TMap<Directions, FVector> IterDirections;
+	static AGrid* LastMadeInstance;
+
 	virtual void BeginPlay() override;
 
 	AGrid();
@@ -61,8 +75,11 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
-	void ConnectChunks(FGridChunk* origin, FGridChunk* target);
-	void SetVisited(ARoom* room);
+	FGridChunk* GetChunkNearest(FVector position);
+	Directions NextDirectionTowards(FVector direction);
+	void ConnectAdjacentChunks(FGridChunk* origin, FGridChunk* target);
+	bool AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2);
+	void ReserveChunks(ARoom* room);
 	void CarvePassageways();
 	void ConnectDoorways();
 	void SpawnAssets();

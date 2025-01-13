@@ -132,8 +132,6 @@ void AGameLevel::SpawnRooms()
 	RoomsToSpawn.Sort();
 	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty() ; RoomsToSpawn.Remove(Room))
 	{
-		UClass* actor = TSubclassOf<AActor>();
-
 		ARoom* RoomToSpawn = Room.GetDefaultObject();
 
 		FActorSpawnParameters SpawnParams;
@@ -143,23 +141,34 @@ void AGameLevel::SpawnRooms()
 		//needs to be replaced with custom location.
 		FVector RoomSpawnLocation = GetActorLocation();
 
-		GetWorld()->SpawnActor<ARoom>(*Room, RoomSpawnLocation, FRotator::ZeroRotator, SpawnParams);
+		ARoom* SpawnedRoom = GetWorld()->SpawnActor<ARoom>(*Room, RoomSpawnLocation, FRotator::ZeroRotator, SpawnParams);
+		RoomInstances.Add(SpawnedRoom);
 	}
 }
 
 void AGameLevel::GenerateNewRooms()
 {
+	//float GeneratedRoomArea;
+	//float RoomArea;
+	//for (float CurrentFilledArea = 0; CurrentFilledArea < GeneratedRoomArea; CurrentFilledArea += RoomArea)
+	//{
 
+	//}
 }
 
 void AGameLevel::CarvePassageways()
 {
+	//float GeneratedRoomArea;
+	//float RoomArea;
+	//for (float CurrentFilledArea = 0; CurrentFilledArea < GeneratedRoomArea; CurrentFilledArea += RoomArea)
+	//{
 
+	//}
 }
 
 void AGameLevel::ConnectRooms()
 {
-
+	//get entry point chunk and connect with other chunk.
 }
 
 void AGameLevel::Cleanup()
