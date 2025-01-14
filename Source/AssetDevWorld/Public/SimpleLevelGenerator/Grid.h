@@ -51,7 +51,7 @@ class ASSETDEVWORLD_API AGrid : public AActor
 	GENERATED_BODY()
 	
 private:
-	TArray<FGridChunk*>* Chunks;
+	TArray<FGridChunk*> Chunks;
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;
 	FGridChunk* StartChunk;
@@ -93,7 +93,7 @@ public:
 	void ReserveChunksInRoom(ARoom* room);
 	void CarvePassageways(float MaxArea);
 	void ConnectDoorways();
-	void SpawnAssets();
 	void Cleanup();
+	void SpawnAssets();
 
 };
