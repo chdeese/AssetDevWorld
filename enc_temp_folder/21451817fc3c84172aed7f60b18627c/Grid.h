@@ -23,9 +23,9 @@ struct FGridChunk
 {
 	GENERATED_BODY()
 public:
-	TArray<FGridChunkEdge*> Edges;
+	TArray<FGridChunkEdge*>* Edges;
 	void GetEdge(FGridChunkEdge& edge, FVector normal) { 
-		for (auto i = Edges.begin(); i != Edges.end(); ++i) 
+		for (auto i = Edges->begin(); i != Edges->end(); ++i) 
 		{ if ((*i)->Normal.Dot(normal) > 0.9f) edge = *(*i); return; } /*cant find edge*/edge = FGridChunkEdge(); return; }
 	FVector Position;
 	FGridChunk* Previous;
@@ -42,7 +42,7 @@ struct FGridIterator
 public:
 	FGridChunk* Target;
 	FGridChunk* operator*() { return Target; }
-	bool Iterate(FVector dir) { for (auto i = Target->Edges.begin(); i != Target->Edges.end(); ++i) { if (0.1f > (dir - (*i)->Normal).Size()) { Target = (*i)->Target; return true; } } /*cant find dir*/return false; };
+	bool Iterate(FVector dir) { for (auto i = Target->Edges->begin(); i != Target->Edges->end(); ++i) { if (0.1f > (dir - (*i)->Normal).Size()) { Target = (*i)->Target; return true; } } /*cant find dir*/return false; };
 };
 
 UCLASS(Placeable)
@@ -55,7 +55,6 @@ private:
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;
 	FGridChunk* StartChunk;
-	FGridChunk* PassagewayChunks;
 	FGridChunk* Start() { return StartChunk; };
 	AGameLevel* GameLevel;
 public:	
@@ -91,7 +90,7 @@ public:
 	bool IsChunkWithinRoomBounds(ARoom* Room, FGridChunk* Chunk);
 	bool ShouldBeReserved(FGridChunk* Chunk, ARoom* Room);
 	void ReserveChunksInRoom(ARoom* room);
-	void CarvePassageways(float MaxArea);
+	void CarvePassageways();
 	void ConnectDoorways();
 	void SpawnAssets();
 	void Cleanup();

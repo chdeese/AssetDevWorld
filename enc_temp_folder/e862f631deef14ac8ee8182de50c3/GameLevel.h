@@ -61,9 +61,6 @@ public:
 	float UniqueRoomPercent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PassagewayAreaPercent = 0.25f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bFlatMode;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

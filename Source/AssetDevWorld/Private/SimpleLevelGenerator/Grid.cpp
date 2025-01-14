@@ -67,31 +67,31 @@ void AGrid::init(AGameLevel* level, int width, int length)
 		newChunk->bVisited = false;
 		newChunk->bSpawned = false;
 		{
-			newChunk->Edges = new TArray<FGridChunkEdge*>();
+			newChunk->Edges = TArray<FGridChunkEdge*>();
 
 			//right
 			FGridChunkEdge* newEdge = new FGridChunkEdge();
 			newEdge->Target = nullptr;
 			newEdge->Normal = FVector(1, 0, 0);
-			newChunk->Edges->Add(newEdge);
+			newChunk->Edges.Add(newEdge);
 
 			//left
 			newEdge = new FGridChunkEdge();
 			newEdge->Target = nullptr;
 			newEdge->Normal = FVector(-1, 0, 0);
-			newChunk->Edges->Add(newEdge);
+			newChunk->Edges.Add(newEdge);
 
 			//forwards
 			newEdge = new FGridChunkEdge();
 			newEdge->Target = nullptr;
 			newEdge->Normal = FVector(0, 1, 0);
-			newChunk->Edges->Add(newEdge);
+			newChunk->Edges.Add(newEdge);
 
 			//backwards
 			newEdge = new FGridChunkEdge();
 			newEdge->Target = nullptr;
 			newEdge->Normal = FVector(0, -1, 0);
-			newChunk->Edges->Add(newEdge);
+			newChunk->Edges.Add(newEdge);
 		}
 
 		//set start chunk if this is the first iteration
@@ -179,10 +179,10 @@ void AGrid::ConnectAdjacentChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 	FVector C1ToC2 = Chunk2->Position - Chunk1->Position;
 	C1ToC2 = C1ToC2.GetUnsafeNormal();
 
-	auto C1 = Chunk1->Edges->begin();
-	auto C1End = Chunk2->Edges->end();
-	auto C2 = Chunk1->Edges->begin();
-	auto C2End = Chunk2->Edges->end();
+	auto C1 = Chunk1->Edges.begin();
+	auto C1End = Chunk2->Edges.end();
+	auto C2 = Chunk1->Edges.begin();
+	auto C2End = Chunk2->Edges.end();
 
 	//iterates fully between each list
 	while (C1 != C1End || C2 != C2End)
@@ -204,7 +204,7 @@ void AGrid::ConnectAdjacentChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 bool AGrid::AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2)
 {
 	FVector DirectionTo = (Chunk2->Position - Chunk1->Position).GetUnsafeNormal();
-	for (auto i = Chunk1->Edges->begin(); i != Chunk1->Edges->end(); ++i)
+	for (auto i = Chunk1->Edges.begin(); i != Chunk1->Edges.end(); ++i)
 	{
 		if (DirectionTo.Dot((*i)->Normal) > 0.9f)
 			return (*i)->Target == Chunk2 ? true : false;
@@ -293,8 +293,44 @@ void AGrid::ReserveChunksInRoom(ARoom* room)
 	}
 }
 
-void AGrid::CarvePassageways()
+void AGrid::CarvePassageways(float MaxArea)
 {
+	Iterator->Target = StartChunk;
+	//finds a unvisited chunk
+	while (Iterator->Target->bVisited)
+		GetChunkNearest(ChunkRootCM * NextDirectionTowards(GameLevel->GetActorLocation()));
+
+	float TotalVisitedArea = 0;
+	float SqArea = ChunkRootCM * ChunkRootCM;
+	TArray<FGridChunkEdge*> AttemptedEdges = TArray<FGridChunkEdge*>();
+	while (TotalVisitedArea < MaxArea)
+	{
+		if (Iterator->Target->Edges.Num() == 0 || AttemptedEdges.Num() == Iterator->Target->Edges.Num())
+			Iterator->Target = Iterator->Target->Previous;
+
+		int RandNum = FMath::RandRange(0, Iterator->Target->Edges.Num() - 1);
+		FGridChunkEdge* Edge = Iterator->Target->Edges[RandNum];
+		FGridChunkEdge EdgePast;
+		Edge->Target->GetEdge(EdgePast, Edge->Normal);
+		if (Edge->Target && EdgePast.Target && !Edge->Target->bVisited && !EdgePast.Target->bVisited)
+		{
+			Edge->Target->bVisited = true;
+			TotalVisitedArea += SqArea;
+
+			Iterator->Target = Edge->Target;
+
+			if (!AttemptedEdges.IsEmpty())
+				AttemptedEdges.Empty();
+		}
+		else
+			if (!Edge->Target)
+			{
+				Iterator->Target->Edges.Remove(Edge);
+				delete Edge;
+			}
+			else
+				AttemptedEdges.Add(Edge);
+	}
 
 }
 

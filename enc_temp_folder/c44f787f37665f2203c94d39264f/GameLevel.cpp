@@ -78,6 +78,7 @@ void AGameLevel::SelectRooms()
 	float LevelBoundingBoxArea = b3DMode ? 
 		MaxWidth * MaxLength * MaxHeight : 
 		MaxWidth * MaxLength;
+	float PassagewayAreaPercent = 0.25f;
 	float EmptyAreaPercent = 0.1f;
 	float AssetRoomArea = LevelBoundingBoxArea * Density;
 
