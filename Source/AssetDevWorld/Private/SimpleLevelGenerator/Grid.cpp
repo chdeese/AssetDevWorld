@@ -3,6 +3,7 @@
 #include "SimpleLevelGenerator/Grid.h"
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/GameLevel.h"
+#include "SimpleLevelGenerator/PassagewayDataAsset.h"
 
 
 
@@ -16,7 +17,7 @@ void AGrid::BeginPlay()
 AGrid::AGrid()
 {
 	Iterator = new FGridIterator();
-	Chunks = new TArray<FGridChunk*>();
+	Chunks = TArray<FGridChunk*>();
 }
 
 AGrid::~AGrid()
@@ -111,7 +112,7 @@ void AGrid::init(AGameLevel* level, int width, int length)
 			ConnectAdjacentChunks(Iterator->Target, newChunk);
 		}
 
-		Chunks->Add(newChunk);
+		Chunks.Add(newChunk);
 
 		//if heading out of bounds head forward to the next row
 		if (CurrentColumn == CubeCountX - 1 || CurrentColumn == 0)
@@ -142,15 +143,17 @@ FGridChunk* AGrid::GetChunkNearest(FVector position)
 	Iterator->Target = StartChunk;
 
 	bool NearPosition = false;
-	FGridChunk* Chunk = nullptr;
+	FGridChunk* Chunk = StartChunk;
 	while (!NearPosition)
 	{
 		FVector VectorTo = position - Iterator->Target->Position;
 		FVector ChunkBorderPosTowardsPos = VectorTo.GetUnsafeNormal() * ChunkRootCM;
-		if (VectorTo.Size() > ChunkBorderPosTowardsPos.Size())
+		if (VectorTo.Size() < ChunkBorderPosTowardsPos.Size())
+		{
 			Iterator->Iterate(NextDirectionTowards(position));
-		Chunk = Iterator->Target;
-		NearPosition = true;
+			Chunk = Iterator->Target;
+			NearPosition = true;
+		}
 	}
 	return Chunk;
 }
@@ -286,6 +289,8 @@ void AGrid::ReserveChunksInRoom(ARoom* room)
 			bDirectionChoiceResolved = true;
 		}
 		Iterator->Target->bVisited = true;
+		//room should already be spawned/generated
+		Iterator->Target->bSpawned = true;
 		ChunksVisited++;
 
 		Iterator->Target->Previous = LastChunk; /*nullptr if first time*/
@@ -298,7 +303,7 @@ void AGrid::CarvePassageways(float MaxArea)
 	Iterator->Target = StartChunk;
 	//finds a unvisited chunk
 	while (Iterator->Target->bVisited)
-		GetChunkNearest(ChunkRootCM * NextDirectionTowards(GameLevel->GetActorLocation()));
+		Iterator->Iterate(NextDirectionTowards(GameLevel->GetActorLocation()));
 
 	float TotalVisitedArea = 0;
 	float SqArea = ChunkRootCM * ChunkRootCM;
@@ -357,14 +362,99 @@ void AGrid::ConnectDoorways()
 		}
 	}
 }
-
-void AGrid::SpawnAssets()
-{
-}
-
+//cleans up the grid structure before spawning assets
 void AGrid::Cleanup()
 {
+	TArray<FGridChunkEdge*> SafeEdges = TArray<FGridChunkEdge*>();
+	//does not use FGridIterator since it iterates through navigable paths
+	for (int i = 0; i < Chunks.Num(); i++)
+	{
+		for (FGridChunkEdge* Edge : Chunks[i]->Edges)
+			if (Edge->Target && Edge->Target->bVisited)
+			{
+				SafeEdges.Add(Edge);
+			}
+		Chunks[i]->Edges.Empty();
+		Chunks[i]->Edges.Append(SafeEdges);
+	}
 }
+//call cleanup first
+//for now chooses randomly between passageway templates.
+void AGrid::SpawnAssets()
+{
+
+	for (FGridChunk* Chunk : Chunks)
+	{
+		int RandNum = FMath::RandRange(0, GameLevel->PassagewayTemplates.Num() - 1);
+		UPassagewayDataAsset* Template = GameLevel->PassagewayTemplates[RandNum];
+		FVector Direction = FVector::Zero();
+		for (int i = 0; i < 4; i++)
+		{
+			Direction = FVector::Zero();
+			switch (i)
+			{
+			case 0:
+				Direction = IterDirections.FindRef(Directions::Forwards);
+				break;
+			case 1:
+				Direction = IterDirections.FindRef(Directions::Backwards);
+				break;
+			case 2:
+				Direction = IterDirections.FindRef(Directions::Left);
+				break;
+			case 3:
+				Direction = IterDirections.FindRef(Directions::Right);
+				break;
+			}
+
+			FGridChunkEdge Edge;
+			Chunk->GetEdge(Edge, Direction);
+
+			//if we can not navigate in this direction, place an asset
+			if (!Edge.Target)
+			{
+				FVector NewLocation;
+				FRotator NewRotation = FRotator::ZeroRotator;
+				UClass* ActorSubclass = Template->FloorAsset;
+
+				UWorld* World = GetWorld();
+				AActor* Floor = World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, NewRotation);
+
+				ActorSubclass = Template->WallAsset;
+
+				FActorSpawnParameters Params = FActorSpawnParameters();
+				NewLocation = Chunk->Position + (Direction * (ChunkRootCM / 2));
+				NewRotation = FRotationMatrix::MakeFromX((Chunk->Position - NewLocation).GetUnsafeNormal()).Rotator();
+				Params.Owner = Floor;
+
+				World->SpawnActor<AActor>(ActorSubclass, NewLocation, NewRotation, Params);
+
+				//find a way to spawn other walls for this chunk.
+
+			}
+
+
+		}
+		
+
+
+	}
+
+
+
+
+
+
+
+	//Iterator->Target = StartChunk;
+	////finds a visited chunk that is not apart of a room (only room chunks have bSpawned = true)
+	//while (!Iterator->Target->bVisited || Iterator->Target->bSpawned)
+	//	//gets a chunk to start from that is not spawned and has been visited before
+	//	Iterator->Iterate(NextDirectionTowards(GameLevel->GetActorLocation()));
+	//Iterator->Target
+
+}
+
 
 //AGrid::AGrid(int width, int length)
 //{

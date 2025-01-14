@@ -5,6 +5,7 @@
 #include "SimpleLevelGenerator/Room.h"
 #include "SimpleLevelGenerator/RoomDataAsset.h"
 #include "SimpleLevelGenerator/RoomTemplateDataAsset.h"
+#include "SimpleLevelGenerator/PassagewayDataAsset.h"
 #include "SimpleLevelGenerator/Grid.h"
 
 AGameLevel::AGameLevel()

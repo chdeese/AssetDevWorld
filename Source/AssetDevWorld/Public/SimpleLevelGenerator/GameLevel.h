@@ -10,6 +10,7 @@ class ARoom;
 class AGrid;
 class URoomDataAsset;
 class URoomTemplateDataAsset;
+class UPassagewayDataAsset;
 
 UCLASS(Placeable)
 class ASSETDEVWORLD_API AGameLevel : public AActor
@@ -38,6 +39,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<URoomDataAsset*> PriorityRooms;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<UPassagewayDataAsset*> PassagewayTemplates;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AGrid* Grid;
