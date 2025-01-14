@@ -336,6 +336,26 @@ void AGrid::CarvePassageways(float MaxArea)
 
 void AGrid::ConnectDoorways()
 {
+	for (auto i = GameLevel->RoomInstances.begin(); i != GameLevel->RoomInstances.end(); ++i)
+	{
+		ARoom* CurrentRoom = (*i);
+		for (auto j = CurrentRoom->DoorLocations.begin(); j != CurrentRoom->DoorLocations.end(); ++j)
+		{
+			Iterator->Target = GetChunkNearest(*j);
+
+			for (auto l = Iterator->Target->Edges.begin(); l != Iterator->Target->Edges.end(); ++l)
+			{
+				FGridChunkEdge PassagewayEdge;
+				(*l)->Target->GetEdge(PassagewayEdge, (*l)->Normal);
+				bool bPasswayDetected = PassagewayEdge.Target->bVisited;
+				if (!IsChunkWithinRoomBounds(CurrentRoom, (*l)->Target) && bPasswayDetected)
+				{
+					(*l)->Target->bVisited = true;
+					Iterator->Target->bVisited = true;
+				}
+			}
+		}
+	}
 }
 
 void AGrid::SpawnAssets()
