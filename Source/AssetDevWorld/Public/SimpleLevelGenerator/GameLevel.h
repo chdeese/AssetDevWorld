@@ -18,10 +18,15 @@ class ASSETDEVWORLD_API AGameLevel : public AActor
 	GENERATED_BODY()
 	
 private:
+	UPROPERTY()
 	bool bAlignEntry;
+	UPROPERTY()
 	bool bBuildOnPlay;
+	UPROPERTY()
 	FVector m_entryPosition;
+	UPROPERTY()
 	float UniqueRoomArea;
+	UPROPERTY()
 	TArray<TSubclassOf<ARoom>> RoomsToSpawn;
 
 public:
@@ -60,6 +65,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bSpawnUniqueRooms;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bGenerateCeilingsForRoomsAndPassageways;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float UniqueRoomPercent;

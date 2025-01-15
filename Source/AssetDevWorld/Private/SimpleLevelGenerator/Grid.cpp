@@ -279,7 +279,6 @@ void AGrid::ReserveChunksInRoom(ARoom* room)
 					else
 						//failed to find all chunks in room
 						__debugbreak();
-					
 				}
 			}
 
@@ -379,14 +378,21 @@ void AGrid::Cleanup()
 	}
 }
 //call cleanup first
-//for now chooses randomly between passageway templates.
+//chooses randomly between passageway templates.
 void AGrid::SpawnAssets()
 {
-
+	Cleanup();
 	for (FGridChunk* Chunk : Chunks)
 	{
 		int RandNum = FMath::RandRange(0, GameLevel->PassagewayTemplates.Num() - 1);
 		UPassagewayDataAsset* Template = GameLevel->PassagewayTemplates[RandNum];
+
+		UWorld* World = GetWorld();
+		UClass* ActorSubclass = Template->FloorAsset;
+		AActor* Floor = World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
+		ActorSubclass = Template->CeilingAsset;
+		if (GameLevel->bGenerateCeilingsForRoomsAndPassageways && ActorSubclass != nullptr)
+			World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
 		FVector Direction = FVector::Zero();
 		for (int i = 0; i < 4; i++)
 		{
@@ -411,33 +417,18 @@ void AGrid::SpawnAssets()
 			Chunk->GetEdge(Edge, Direction);
 
 			//if we can not navigate in this direction, place an asset
-			if (!Edge.Target)
+			if (Edge.Target == nullptr)
 			{
-				FVector NewLocation;
-				FRotator NewRotation = FRotator::ZeroRotator;
-				UClass* ActorSubclass = Template->FloorAsset;
-
-				UWorld* World = GetWorld();
-				AActor* Floor = World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, NewRotation);
-
-				ActorSubclass = Template->WallAsset;
-
 				FActorSpawnParameters Params = FActorSpawnParameters();
-				NewLocation = Chunk->Position + (Direction * (ChunkRootCM / 2));
-				NewRotation = FRotationMatrix::MakeFromX((Chunk->Position - NewLocation).GetUnsafeNormal()).Rotator();
 				Params.Owner = Floor;
 
+				FVector NewLocation = Chunk->Position + (Direction * (ChunkRootCM / 2));
+				FRotator NewRotation = FRotationMatrix::MakeFromX((Chunk->Position - NewLocation).GetUnsafeNormal()).Rotator();
+
+				ActorSubclass = Template->WallAsset;
 				World->SpawnActor<AActor>(ActorSubclass, NewLocation, NewRotation, Params);
-
-				//find a way to spawn other walls for this chunk.
-
 			}
-
-
 		}
-		
-
-
 	}
 
 

@@ -14,8 +14,8 @@ struct FGridChunkEdge
 {
 	GENERATED_BODY()
 public:
-	FGridChunk* Target;
-	FVector Normal;
+	FGridChunk* Target = nullptr;
+	FVector Normal = FVector::ZeroVector;
 };
 
 USTRUCT()
