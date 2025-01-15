@@ -7,6 +7,31 @@
 
 
 
+AGrid::Directions AGrid::RandomDirection(int Dimensions = 0)
+{
+	if (Dimensions != 2 && Dimensions != 3) 
+	{
+		__debugbreak();
+		return Directions::Backwards;
+	}
+	Dimensions *= 2;
+	switch (FMath::RandRange(0, Dimensions - 1))
+	{
+	default:
+		return AGrid::Directions::Forwards;
+	case 1:
+		return AGrid::Directions::Backwards;
+	case 2:
+		return AGrid::Directions::Left;
+	case 3:
+		return AGrid::Directions::Right;
+	case 4:
+		return AGrid::Directions::Up;
+	case 5:
+		return AGrid::Directions::Down;
+	}
+}
+
 // Called when the game starts or when spawned
 void AGrid::BeginPlay()
 {
@@ -136,6 +161,13 @@ void AGrid::init(AGameLevel* level, int width, int length)
 			break;
 		}	
 	}
+}
+
+FGridIterator* AGrid::GetIterator()
+{
+	if (!Iterator->Target)
+		Iterator->Target = StartChunk;
+	return Iterator;
 }
 
 FGridChunk* AGrid::GetChunkNearest(FVector position)
@@ -430,29 +462,6 @@ void AGrid::SpawnAssets()
 			}
 		}
 	}
-
-
-
-
-
-
-
-	//Iterator->Target = StartChunk;
-	////finds a visited chunk that is not apart of a room (only room chunks have bSpawned = true)
-	//while (!Iterator->Target->bVisited || Iterator->Target->bSpawned)
-	//	//gets a chunk to start from that is not spawned and has been visited before
-	//	Iterator->Iterate(NextDirectionTowards(GameLevel->GetActorLocation()));
-	//Iterator->Target
-
 }
-
-
-//AGrid::AGrid(int width, int length)
-//{
-//}
-//
-//AGrid::AGrid(int width, int height, int length)
-//{
-//}
 
 

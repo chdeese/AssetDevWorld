@@ -14,14 +14,15 @@ AGameLevel::AGameLevel()
 	//not implemented
 	
 	//leaves a forshadowing area??
+	
 	//creates a new level at runtime.
 	bBuildOnPlay = true;
 
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
 
 	bAlignEntry = false;
+	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
 }
 
 AGameLevel::AGameLevel(FVector entryPosition)
@@ -45,17 +46,14 @@ void AGameLevel::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(bAlignEntry)
-	{
-		//if beginning rooms exist and have entry point socket, align socket position with m_entryPosition.
-		//bug forseen with intializing this constructor in editor, be advised.
-	}
-
 	if (bBuildOnPlay)
 	{
-		//Grid is stored by reference here.
-		//dies out of scope.
-		//Grid = &AGrid(MaxWidth, MaxLength);
+		UClass* GridClass = CreateDefaultSubobject<UClass, AGrid>(TEXT("AGrid"), false);
+		FActorSpawnParameters Params = FActorSpawnParameters();
+		Params.Owner = this;
+
+		Grid = GetWorld()->SpawnActor<AGrid>(GridClass, GetActorLocation(), FRotator::ZeroRotator, Params);
+
 		Warmup();
 		SelectRooms();
 		SpawnRooms();
@@ -67,11 +65,46 @@ void AGameLevel::BeginPlay()
 	}
 }
 
+FGridIterator* AGameLevel::GetIterator()
+{
+	return Grid->GetIterator();
+}
+
+
+FVector AGameLevel::GetRandomBorderAlignedRoomPosition(float Width, float Length)
+{
+	FVector RandomDirection = FVector(FMath::Rand32(), FMath::Rand32(), FMath::Rand32());
+	RandomDirection = RandomDirection.GetSafeNormal();
+	FVector RandomDirectionAbs = RandomDirection;
+	if (RandomDirectionAbs.X < 0)
+		RandomDirectionAbs.X = -RandomDirectionAbs.X;
+	if (RandomDirectionAbs.Y < 0)
+		RandomDirectionAbs.Y = -RandomDirectionAbs.Y;
+	if (RandomDirectionAbs.Z < 0)
+		RandomDirectionAbs.Z = -RandomDirectionAbs.Z;
+
+	float Min = GetActorLocation().X - ((MaxWidth - Width) / 2);
+	float Max = GetActorLocation().X + ((MaxWidth - Width) / 2);
+	float RandomXPosLevelAligned = FMath::RandRange(Min, Max);
+	Min = GetActorLocation().Y - ((MaxLength - Length) / 2);
+	Max = GetActorLocation().Y + ((MaxLength - Length) / 2);
+	float RandomYPosLevelAligned = FMath::RandRange(Min, Max);
+	if (RandomDirection.X > RandomDirection.Y)
+		if (RandomDirection.X > 0)
+			RandomXPosLevelAligned = GetActorLocation().X + ((MaxWidth - Width) / 2);
+		else
+			RandomXPosLevelAligned = GetActorLocation().X - ((MaxWidth - Width) / 2);
+	else
+		if (RandomDirection.Y > 0)
+			RandomYPosLevelAligned = GetActorLocation().X + ((MaxLength - Length) / 2);
+		else
+			RandomYPosLevelAligned = GetActorLocation().X - ((MaxLength - Length) / 2);
+
+	return GetActorLocation() + FVector(RandomXPosLevelAligned, RandomYPosLevelAligned, 0);
+}
 
 void AGameLevel::Warmup()
 {
-	//uses int32
-	FMath::SRandInit(FDateTime::Now().GetSecond());
 }
 
 void AGameLevel::SelectRooms()
@@ -98,9 +131,9 @@ void AGameLevel::SelectRooms()
 		RoomArea = 0;
 		if (!PriorityRooms.IsEmpty())
 		{
-			for (auto i = PriorityRooms.begin(); i != PriorityRooms.end(); ++i)
+			for (URoomDataAsset* PriorityRoomData : PriorityRooms)
 			{
-				RoomClass = (*(*i)->RoomAsset);
+				RoomClass = PriorityRoomData->RoomAsset;
 				//casted only for BoundsArea float value
 				Room = Cast<ARoom>(RoomClass->GetDefaultObject());
 				RoomArea += Room->BoundsArea;
@@ -115,8 +148,7 @@ void AGameLevel::SelectRooms()
 		if(RoomSelection.IsEmpty())
 			RoomSelection = TArray<TSubclassOf<ARoom>>(RoomsToSpawn);
 
-		RandomNum = FMath::SRand();
-		RandomNum *= OptionalRooms.Num() - 1;
+		RandomNum = FMath::RandRange(0, OptionalRooms.Num() - 1);
 
 		RoomSelection.RemoveAt(RandomNum, EAllowShrinking::Yes);
 
@@ -128,9 +160,24 @@ void AGameLevel::SelectRooms()
 //places the largest rooms first
 void AGameLevel::SpawnRooms()
 {
+	//use vector math to place beginning room on border facing outwards, then get entry socket.
+	int RandomNum = FMath::RandRange(0, BeginningRooms.Num() - 1);
+	FVector Offset = FVector::ZeroVector;
+	FActorSpawnParameters Params = FActorSpawnParameters();
+	FVector BeginningRoomOrigin;
+	FVector BeginningRoomBoxExtent;
+	GetActorBounds(true, BeginningRoomOrigin, BeginningRoomBoxExtent, true);
+
+	ARoom* BeginningRoom;
+	if (!BeginningRooms.IsEmpty())
+	{
+		BeginningRoom = GetWorld()->SpawnActor<ARoom>(BeginningRooms[RandomNum]->RoomAsset, GetRandomBorderAlignedRoomPosition(BeginningRoomBoxExtent.X * 2, BeginningRoomBoxExtent.Y * 2), FRotator::ZeroRotator, Params);
+		RoomInstances.Add(BeginningRoom);
+	}
+
 	// smallest -> largest (by area)
 	RoomsToSpawn.Sort();
-	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty() ; RoomsToSpawn.Remove(Room))
+	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty(); RoomsToSpawn.Remove(Room))
 	{
 		ARoom* RoomToSpawn = Room.GetDefaultObject();
 
@@ -142,6 +189,10 @@ void AGameLevel::SpawnRooms()
 		FVector RoomSpawnLocation = GetActorLocation();
 
 		ARoom* SpawnedRoom = GetWorld()->SpawnActor<ARoom>(*Room, RoomSpawnLocation, FRotator::ZeroRotator, SpawnParams);
+
+		//setup socket locations.
+		
+
 		RoomInstances.Add(SpawnedRoom);
 	}
 }
@@ -181,6 +232,7 @@ void AGameLevel::Finalize()
 	//check if priority rooms, a navmesh from start->end, and other stuff exists.
 	AGameLevel::Cleanup();
 	//other stuff
+	
 }
 
 void AGameLevel::UpdateEntitySpawns()

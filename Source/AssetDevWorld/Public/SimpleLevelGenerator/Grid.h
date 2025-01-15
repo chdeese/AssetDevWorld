@@ -24,6 +24,7 @@ struct FGridChunk
 	GENERATED_BODY()
 public:
 	TArray<FGridChunkEdge*> Edges;
+	//if edge not found create new edge target->nullptr
 	void GetEdge(FGridChunkEdge& edge, FVector normal) { 
 		for (auto i = Edges.begin(); i != Edges.end(); ++i) 
 		{ if ((*i)->Normal.Dot(normal) > 0.9f) edge = *(*i); return; } /*cant find edge*/edge = FGridChunkEdge(); return; }
@@ -58,16 +59,20 @@ private:
 	FGridChunk* PassagewayChunks;
 	FGridChunk* Start() { return StartChunk; };
 	AGameLevel* GameLevel;
+	AActor* EntryPositionActor;
 public:	
 	enum Directions
 	{
-		Up,
-		Left,
-		Down,
-		Right,
+		Forwards,
 		Backwards,
-		Forwards
+		Left,
+		Right,
+		Up,
+		Down
 	};
+
+	AGrid::Directions RandomDirection(int Dimensions);
+
 	TMap<AGrid::Directions, FVector> IterDirections = { {Directions::Up, FVector(0, 0, 1)}, {Directions::Down, FVector(0, 0, -1)},
 					   {Directions::Forwards, FVector(0, 1, 0)}, {Directions::Backwards, FVector(0, -1, 0)},
 					   {Directions::Left, FVector(-1, 0, 0)}, {Directions::Right, FVector(1, 0, 0)} };
@@ -84,6 +89,7 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
+	FGridIterator* GetIterator();
 	FGridChunk* GetChunkNearest(FVector position);
 	FVector NextDirectionTowards(FVector direction);
 	void ConnectAdjacentChunks(FGridChunk* origin, FGridChunk* target);

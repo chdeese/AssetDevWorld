@@ -5,6 +5,11 @@
 #include "SimpleLevelGenerator/EntityDataAsset.h"
 #include "SimpleLevelGenerator/Grid.h"
 
+void ARoom::SetSocketLocation(FVector& ReturnVector, FName SocketName)
+{
+	ReturnVector = FindComponentByClass<UStaticMeshComponent>()->GetSocketTransform(SocketName).GetLocation();
+}
+
 bool ARoom::operator<(ARoom const& rhs)
 {
 	return BoundsArea < rhs.BoundsArea;
@@ -22,6 +27,12 @@ ARoom::ARoom()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Chunks = TArray<FGridChunk*>();
+	FVector RoomOrigin;
+	FVector RoomBoxExtent;
+	GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
+	BoundsArea = RoomBoxExtent.X * RoomBoxExtent.Y;
+
+	//process sockets
 }
 
 // Called when the game starts or when spawned

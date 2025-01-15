@@ -8,6 +8,7 @@
 
 class ARoom;
 class AGrid;
+struct FGridIterator;
 class URoomDataAsset;
 class URoomTemplateDataAsset;
 class UPassagewayDataAsset;
@@ -16,7 +17,7 @@ UCLASS(Placeable)
 class ASSETDEVWORLD_API AGameLevel : public AActor
 {
 	GENERATED_BODY()
-	
+
 private:
 	UPROPERTY()
 	bool bAlignEntry;
@@ -82,7 +83,7 @@ public:
 	bool b3DMode;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int MaxHeight;
+	int MaxHeight = 0;
 
 public:	
 	// creates a new game level
@@ -92,7 +93,11 @@ public:
 
 	virtual void BeginPlay() override;
 
+	FGridIterator* GetIterator();
+
 protected:
+	UFUNCTION(BlueprintCallable)
+	FVector GetRandomBorderAlignedRoomPosition(float Width, float Length);
 	UFUNCTION(BlueprintCallable)
 	void Warmup();
 	UFUNCTION(BlueprintCallable)
@@ -111,5 +116,6 @@ protected:
 	void Finalize();
 	UFUNCTION(BlueprintCallable)
 	void UpdateEntitySpawns();
+
 
 };

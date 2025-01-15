@@ -14,8 +14,12 @@ class ASSETDEVWORLD_API ARoom : public AActor
 {
 	GENERATED_BODY()
 	
-private:
+public:
 	TArray<FGridChunk*> Chunks;
+	UPROPERTY()
+	float BoundsArea;
+	UFUNCTION(BlueprintCallable)
+	void SetSocketLocation(FVector& ReturnVector, FName SocketName);
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<AActor*> OwnedActiveEntities;
@@ -36,13 +40,13 @@ public:
 	TArray<FVector> DoorLocations;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector EntryLocation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bRepeatSpawns;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnCooldownSeconds;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float BoundsArea;
 
 	bool operator<(ARoom const& rhs);
 
