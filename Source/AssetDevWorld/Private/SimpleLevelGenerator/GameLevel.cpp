@@ -217,12 +217,81 @@ void AGameLevel::SpawnRooms()
 
 void AGameLevel::GenerateNewRooms()
 {
-	//float GeneratedRoomArea;
-	//float RoomArea;
-	//for (float CurrentFilledArea = 0; CurrentFilledArea < GeneratedRoomArea; CurrentFilledArea += RoomArea)
-	//{
+	if (RoomTemplates.IsEmpty())
+		return;
 
-	//}
+	AActor* NewRoom;
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	TSubclassOf<AActor> ActorSubclass = TSubclassOf<ARoom>();
+	
+
+	FVector RandomGeneratedChunkCount;
+	URoomTemplateDataAsset* RandomTemplate;
+
+	float FilledArea;
+	float MaxArea = UniqueRoomPercent * (MaxWidth * MaxLength);
+	for (float TotalFilledArea = 0; TotalFilledArea < MaxArea; TotalFilledArea += FilledArea)
+	{
+		FilledArea = 0;
+		RandomGeneratedChunkCount = { FMath::RandRange(UniqueRoomChunksMin.X, UniqueRoomChunksMax.X), FMath::RandRange(UniqueRoomChunksMin.Y, UniqueRoomChunksMax.Y), 3 };
+
+		FVector NewPosition = GetRandomBorderAlignedRoomPosition(RandomGeneratedChunkCount.X, RandomGeneratedChunkCount.Y);
+		NewRoom = GetWorld()->SpawnActor<AActor>(ActorSubclass, NewPosition, FRotator::ZeroRotator, SpawnParams);
+
+		RandomTemplate = (RoomTemplates[FMath::RandRange(0, RoomTemplates.Num() - 1)]);
+		if (!NewRoom->FindComponentByClass<UStaticMeshComponent>())
+			NewRoom = GenerateNewRoom(NewRoom, NewPosition, RandomGeneratedChunkCount * Grid->ChunkRootCM, FRotator::ZeroRotator, RandomTemplate);
+		
+		FilledArea += RandomGeneratedChunkCount.X * RandomGeneratedChunkCount.Y;
+	}
+}
+
+//creates a square room
+//test vector math
+ARoom* AGameLevel::GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVector Scale, FRotator Rotation = FRotator::ZeroRotator, URoomTemplateDataAsset* Template = nullptr)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = Owner;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	ARoom* NewRoom = GetWorld()->SpawnActor<ARoom>(Position, Rotation, SpawnParams);
+	SpawnParams.Owner = NewRoom;
+
+	AActor* RoomPart;
+	RoomPart = GetWorld()->SpawnActor<ARoom>(Template->FloorAsset, Position, Rotation, SpawnParams);
+	RoomPart->SetActorRelativeScale3D(RoomPart->GetActorRelativeScale3D() * Scale);
+
+	bool bPlaceDoor;
+	FVector WallRotation = Rotation.Vector();
+	int RandomDoorCount = FMath::RandRange(1, 3);
+	for (int ChunksHigh = 0; ChunksHigh < FMath::RandRange(UniqueRoomChunksMin.Z, UniqueRoomChunksMax.Z); ChunksHigh++)
+		for (int i = 4; i > 0; i--)
+		{
+			bPlaceDoor = false;
+			if (RandomDoorCount == i)
+			{
+				bPlaceDoor = true;
+				RandomDoorCount--;
+			}
+			else
+				bPlaceDoor = FMath::RandBool();
+			
+
+			//only places doors ground level
+			if (bPlaceDoor && ChunksHigh == 0)
+				RoomPart = GetWorld()->SpawnActor<ARoom>(Template->DoorAsset, Position, Rotation, SpawnParams);
+			else
+				RoomPart = GetWorld()->SpawnActor<ARoom>(Template->WallAsset, Position, Rotation, SpawnParams);
+
+			RoomPart->SetActorRelativeScale3D(RoomPart->GetActorRelativeScale3D() * Scale);
+			RoomPart->SetActorRotation(WallRotation.Rotation());
+
+			WallRotation += FVector(0, 0, 90);
+		}
+
+	return NewRoom;
 }
 
 void AGameLevel::CarvePassageways()

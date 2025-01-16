@@ -68,6 +68,12 @@ public:
 	bool bSpawnUniqueRooms;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector UniqueRoomChunksMin;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector UniqueRoomChunksMax;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bGenerateCeilingsForRoomsAndPassageways;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -108,6 +114,8 @@ protected:
 	void SpawnRooms();
 	UFUNCTION(BlueprintCallable)
 	void GenerateNewRooms();
+	UFUNCTION(BlueprintCallable)
+	ARoom* GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVector Scale, FRotator Rotation, URoomTemplateDataAsset* Template);
 	UFUNCTION(BlueprintCallable)
 	void CarvePassageways();
 	UFUNCTION(BlueprintCallable)

@@ -2,4 +2,4 @@
 
 
 #include "SimpleLevelGenerator/RoomTemplateDataAsset.h"
-
+#include "SimpleLevelGenerator/EntityDataAsset.h"
