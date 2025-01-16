@@ -103,6 +103,24 @@ FVector AGameLevel::GetRandomBorderAlignedRoomPosition(float Width, float Length
 	return GetActorLocation() + FVector(RandomXPosLevelAligned, RandomYPosLevelAligned, 0);
 }
 
+//checks for a 3 chunk gap
+bool AGameLevel::IsValidRoomPosition(FBoxSphereBounds Bounds)
+{
+	FBoxSphereBounds OtherBounds;
+	float PassagewayAreaGrace = Grid->ChunkRootCM / 2;
+
+	for (int i = 0; i < RoomInstances.Num(); i++)
+	{
+		OtherBounds = RoomInstances[i]->GetComponentByClass<UStaticMeshComponent>()->Bounds;
+		FBoxSphereBounds ExtendedBounds = FBoxSphereBounds(Bounds.Origin, Bounds.BoxExtent, Bounds.SphereRadius);
+		//fake a larger size so guarantees room for a 3 chunk gap
+		ExtendedBounds.BoxExtent += 3 * PassagewayAreaGrace * FVector(1, 1, 1);
+		if (Bounds.BoxesIntersect(ExtendedBounds, OtherBounds))
+			return false;
+	}
+	return true;
+}
+
 void AGameLevel::Warmup()
 {
 }
@@ -180,18 +198,18 @@ void AGameLevel::SpawnRooms()
 	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty(); RoomsToSpawn.Remove(Room))
 	{
 		ARoom* RoomToSpawn = Room.GetDefaultObject();
+		FBoxSphereBounds Bounds = RoomToSpawn->GetComponentByClass<UStaticMeshComponent>()->Bounds;
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		//needs to be replaced with custom location.
-		FVector RoomSpawnLocation = GetActorLocation();
+		for (bool bCollisionDetected = true; bCollisionDetected; bCollisionDetected = IsValidRoomPosition(Bounds))
+		{
+			Bounds.Origin = GetRandomBorderAlignedRoomPosition(Bounds.BoxExtent.X * 2, Bounds.BoxExtent.Y * 2);	
+		}
 
-		ARoom* SpawnedRoom = GetWorld()->SpawnActor<ARoom>(*Room, RoomSpawnLocation, FRotator::ZeroRotator, SpawnParams);
-
-		//setup socket locations.
-		
+		ARoom* SpawnedRoom = GetWorld()->SpawnActor<ARoom>(*Room, Bounds.Origin, FRotator::ZeroRotator, SpawnParams);
 
 		RoomInstances.Add(SpawnedRoom);
 	}

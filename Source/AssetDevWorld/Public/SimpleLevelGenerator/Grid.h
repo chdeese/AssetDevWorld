@@ -51,7 +51,7 @@ class ASSETDEVWORLD_API AGrid : public AActor
 {
 	GENERATED_BODY()
 	
-private:
+public:
 	TArray<FGridChunk*> Chunks;
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;

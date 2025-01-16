@@ -99,6 +99,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	FVector GetRandomBorderAlignedRoomPosition(float Width, float Length);
 	UFUNCTION(BlueprintCallable)
+	bool IsValidRoomPosition(FBoxSphereBounds Bounds);
+	UFUNCTION(BlueprintCallable)
 	void Warmup();
 	UFUNCTION(BlueprintCallable)
 	void SelectRooms();
