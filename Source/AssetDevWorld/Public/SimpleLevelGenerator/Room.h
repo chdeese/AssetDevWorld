@@ -61,4 +61,8 @@ public:
 public:
 	UFUNCTION()
 	void SpawnEntity();
+	UFUNCTION()
+	void CreateSpawnersAndDoorLocations();
+	UFUNCTION()
+	void CaptureSockets();
 };

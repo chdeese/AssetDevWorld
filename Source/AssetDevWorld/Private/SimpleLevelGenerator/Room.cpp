@@ -31,8 +31,6 @@ ARoom::ARoom()
 	FVector RoomBoxExtent;
 	GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
 	BoundsArea = RoomBoxExtent.X * RoomBoxExtent.Y;
-
-	//process sockets
 }
 
 // Called when the game starts or when spawned
@@ -45,5 +43,32 @@ void ARoom::BeginPlay()
 // Called every frame
 void ARoom::SpawnEntity()
 {
+}
+
+void ARoom::CreateSpawnersAndDoorLocations()
+{
+
+}
+
+void ARoom::CaptureSockets()
+{
+	//UStaticMeshComponent* Mesh = GetComponentByClass<UStaticMeshComponent>();
+	//TArray<FName> Names = Mesh->GetAllSocketNames();
+
+	//TArray<char> Chars;
+	//TArray<char> Doorway = Cast<const char*, FString>(FString("doorwaysocket").begin());
+	//TArray<char> Pathway;
+	//TArray<char> Entry;
+	/*for (FName Name : Names)
+	{
+		int i1 = 0, i2 = 0, i3 = 0, i4 = 0;
+		for (char C : Chars)
+		{
+			if (CompareItems(C, ))
+			{
+
+			}
+		}*/
+	//}
 }
 
