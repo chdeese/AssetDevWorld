@@ -96,7 +96,7 @@ public:
 	bool AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2);
 	bool IsChunkWithinRoomBounds(ARoom* Room, FGridChunk* Chunk);
 	bool ShouldBeReserved(FGridChunk* Chunk, ARoom* Room);
-	void ReserveChunksInRoom(ARoom* room);
+	void AddRoom(ARoom* room);
 	void CarvePassageways(float MaxArea);
 	void ConnectDoorways();
 	void Cleanup();

@@ -263,7 +263,7 @@ bool AGrid::ShouldBeReserved(FGridChunk* Chunk, ARoom* Room)
 	return !(Chunk->bVisited) && Chunk != nullptr && IsChunkWithinRoomBounds(Room, Chunk);
 }
 
-void AGrid::ReserveChunksInRoom(ARoom* room)
+void AGrid::AddRoom(ARoom* room)
 {
 	FGridChunk* LastChunk = nullptr;
 	int RoomChunksCount = room->BoundsArea / ChunkRootCM;
@@ -322,6 +322,8 @@ void AGrid::ReserveChunksInRoom(ARoom* room)
 		Iterator->Target->bVisited = true;
 		//room should already be spawned/generated
 		Iterator->Target->bSpawned = true;
+
+		Chunks.Add(Iterator->Target);
 		ChunksVisited++;
 
 		Iterator->Target->Previous = LastChunk; /*nullptr if first time*/

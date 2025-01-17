@@ -226,7 +226,6 @@ void AGameLevel::GenerateNewRooms()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	TSubclassOf<AActor> ActorSubclass = TSubclassOf<ARoom>();
 	
-
 	FVector RandomGeneratedChunkCount;
 	URoomTemplateDataAsset* RandomTemplate;
 
@@ -244,6 +243,10 @@ void AGameLevel::GenerateNewRooms()
 		if (!NewRoom->FindComponentByClass<UStaticMeshComponent>())
 			NewRoom = GenerateNewRoom(NewRoom, NewPosition, RandomGeneratedChunkCount * Grid->ChunkRootCM, FRotator::ZeroRotator, RandomTemplate);
 		
+		RoomInstances.Add(Cast<ARoom, AActor>(*NewRoom));
+
+		Grid->AddRoom(Cast<ARoom, AActor>(*NewRoom));
+
 		FilledArea += RandomGeneratedChunkCount.X * RandomGeneratedChunkCount.Y;
 	}
 }
@@ -266,7 +269,8 @@ ARoom* AGameLevel::GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVec
 	bool bPlaceDoor;
 	FVector WallRotation = Rotation.Vector();
 	int RandomDoorCount = FMath::RandRange(1, 3);
-	for (int ChunksHigh = 0; ChunksHigh < FMath::RandRange(UniqueRoomChunksMin.Z, UniqueRoomChunksMax.Z); ChunksHigh++)
+	int RandomChunkHeight = FMath::RandRange(UniqueRoomChunksMin.Z, UniqueRoomChunksMax.Z);
+	for (int ChunksHigh = 0; ChunksHigh < RandomChunkHeight; ChunksHigh++)
 		for (int i = 4; i > 0; i--)
 		{
 			bPlaceDoor = false;
@@ -278,7 +282,6 @@ ARoom* AGameLevel::GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVec
 			else
 				bPlaceDoor = FMath::RandBool();
 			
-
 			//only places doors ground level
 			if (bPlaceDoor && ChunksHigh == 0)
 				RoomPart = GetWorld()->SpawnActor<ARoom>(Template->DoorAsset, Position, Rotation, SpawnParams);
@@ -296,30 +299,25 @@ ARoom* AGameLevel::GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVec
 
 void AGameLevel::CarvePassageways()
 {
-	//float GeneratedRoomArea;
-	//float RoomArea;
-	//for (float CurrentFilledArea = 0; CurrentFilledArea < GeneratedRoomArea; CurrentFilledArea += RoomArea)
-	//{
-
-	//}
+	Grid->CarvePassageways(PassagewayAreaPercent * MaxWidth * MaxLength);
 }
 
 void AGameLevel::ConnectRooms()
 {
-	//get entry point chunk and connect with other chunk.
+	Grid->ConnectDoorways();
 }
 
-void AGameLevel::Cleanup()
-{
-	AGameLevel::~AGameLevel();
-}
 
 void AGameLevel::Finalize()
 {
 	//check if priority rooms, a navmesh from start->end, and other stuff exists.
 	AGameLevel::Cleanup();
-	//other stuff
 	
+	Grid->SpawnAssets();
+}
+
+void AGameLevel::Cleanup()
+{
 }
 
 void AGameLevel::UpdateEntitySpawns()
