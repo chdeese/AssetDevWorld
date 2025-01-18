@@ -282,7 +282,6 @@ ARoom* AGameLevel::GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVec
 			else
 				bPlaceDoor = FMath::RandBool();
 			
-
 			//only places doors ground level
 			if (bPlaceDoor && ChunksHigh == 0)
 				RoomPart = GetWorld()->SpawnActor<ARoom>(Template->DoorAsset, Position, Rotation, SpawnParams);
