@@ -333,6 +333,8 @@ void AGrid::AddRoom(ARoom* room)
 
 void AGrid::CarvePassageways(float MaxArea)
 {
+	if (!StartChunk) return;
+		
 	Iterator->Target = StartChunk;
 	//finds a unvisited chunk
 	while (Iterator->Target->bVisited)

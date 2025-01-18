@@ -48,11 +48,10 @@ void AGameLevel::BeginPlay()
 
 	if (bBuildOnPlay)
 	{
-		UClass* GridClass = CreateDefaultSubobject<UClass, AGrid>(TEXT("AGrid"), false);
 		FActorSpawnParameters Params = FActorSpawnParameters();
 		Params.Owner = this;
 
-		Grid = GetWorld()->SpawnActor<AGrid>(GridClass, GetActorLocation(), FRotator::ZeroRotator, Params);
+		Grid = GetWorld()->SpawnActor<AGrid>(GetActorLocation(), FRotator::ZeroRotator, Params);
 
 		Warmup();
 		SelectRooms();
@@ -162,13 +161,11 @@ void AGameLevel::SelectRooms()
 			continue;
 		}
 
-		TArray<TSubclassOf<ARoom>> RoomSelection = TArray<TSubclassOf<ARoom>>();
-		if(RoomSelection.IsEmpty())
-			RoomSelection = TArray<TSubclassOf<ARoom>>(RoomsToSpawn);
 
-		RandomNum = FMath::RandRange(0, OptionalRooms.Num() - 1);
-
-		RoomSelection.RemoveAt(RandomNum, EAllowShrinking::Yes);
+		if (OptionalRooms.IsEmpty())
+			return;
+		RandomNum = FMath::RandRange(0, OptionalRooms.Num());
+		RoomsToSpawn.RemoveAt(RandomNum, EAllowShrinking::Yes);
 
 		RoomArea += Room->BoundsArea;
 		RoomsToSpawn.Add(RoomClass);
@@ -178,8 +175,9 @@ void AGameLevel::SelectRooms()
 //places the largest rooms first
 void AGameLevel::SpawnRooms()
 {
+	
 	//use vector math to place beginning room on border facing outwards, then get entry socket.
-	int RandomNum = FMath::RandRange(0, BeginningRooms.Num() - 1);
+	int RandomNum = FMath::RandRange(0, BeginningRooms.Num() < 0 ? 0 : BeginningRooms.Num() - 1);
 	FVector Offset = FVector::ZeroVector;
 	FActorSpawnParameters Params = FActorSpawnParameters();
 	FVector BeginningRoomOrigin;
@@ -192,7 +190,7 @@ void AGameLevel::SpawnRooms()
 		BeginningRoom = GetWorld()->SpawnActor<ARoom>(BeginningRooms[RandomNum]->RoomAsset, GetRandomBorderAlignedRoomPosition(BeginningRoomBoxExtent.X * 2, BeginningRoomBoxExtent.Y * 2), FRotator::ZeroRotator, Params);
 		RoomInstances.Add(BeginningRoom);
 	}
-
+	if (RoomsToSpawn.IsEmpty()) return;
 	// smallest -> largest (by area)
 	RoomsToSpawn.Sort();
 	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty(); RoomsToSpawn.Remove(Room))
@@ -239,7 +237,7 @@ void AGameLevel::GenerateNewRooms()
 		FVector NewPosition = GetRandomBorderAlignedRoomPosition(RandomGeneratedChunkCount.X, RandomGeneratedChunkCount.Y);
 		NewRoom = GetWorld()->SpawnActor<AActor>(ActorSubclass, NewPosition, FRotator::ZeroRotator, SpawnParams);
 
-		RandomTemplate = (RoomTemplates[FMath::RandRange(0, RoomTemplates.Num() - 1)]);
+		RandomTemplate = (RoomTemplates[FMath::RandRange(0, RoomTemplates.Num())]);
 		if (!NewRoom->FindComponentByClass<UStaticMeshComponent>())
 			NewRoom = GenerateNewRoom(NewRoom, NewPosition, RandomGeneratedChunkCount * Grid->ChunkRootCM, FRotator::ZeroRotator, RandomTemplate);
 		
@@ -304,6 +302,8 @@ void AGameLevel::CarvePassageways()
 
 void AGameLevel::ConnectRooms()
 {
+	if (RoomInstances.Num() < 1) return;
+		
 	Grid->ConnectDoorways();
 }
 
