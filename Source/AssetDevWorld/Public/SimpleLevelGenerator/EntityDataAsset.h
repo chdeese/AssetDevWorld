@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class ASSETDEVWORLD_API UEntityDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

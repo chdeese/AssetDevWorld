@@ -376,6 +376,8 @@ void AGrid::CarvePassageways(float MaxArea)
 
 void AGrid::ConnectDoorways()
 {
+	if (GameLevel->RoomInstances.IsEmpty())
+		return;
 	for (auto i = GameLevel->RoomInstances.begin(); i != GameLevel->RoomInstances.end(); ++i)
 	{
 		ARoom* CurrentRoom = (*i);

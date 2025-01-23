@@ -56,8 +56,6 @@ public:
 	static const int ChunkRootCM = 150;
 	FGridIterator* Iterator;
 	FGridChunk* StartChunk;
-	FGridChunk* PassagewayChunks;
-	FGridChunk* Start() { return StartChunk; };
 	AGameLevel* GameLevel;
 	AActor* EntryPositionActor;
 public:	
@@ -89,6 +87,7 @@ public:
 	////maybe swap because of unreal xyz cordinate scheme.
 	//AGrid(int width, int height, int length);
 
+	FGridChunk* Start() { return StartChunk; };
 	FGridIterator* GetIterator();
 	FGridChunk* GetChunkNearest(FVector position);
 	FVector NextDirectionTowards(FVector direction);

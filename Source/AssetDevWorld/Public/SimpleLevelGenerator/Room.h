@@ -9,7 +9,7 @@
 class UEntityDataAsset;
 struct FGridChunk;
 
-UCLASS(Placeable)
+UCLASS()
 class ASSETDEVWORLD_API ARoom : public AActor
 {
 	GENERATED_BODY()
@@ -17,7 +17,7 @@ class ASSETDEVWORLD_API ARoom : public AActor
 public:
 	TArray<FGridChunk*> Chunks;
 	UPROPERTY()
-	float BoundsArea;
+	float BoundsArea = 0;
 	UFUNCTION(BlueprintCallable)
 	void SetSocketLocation(FVector& ReturnVector, FName SocketName);
 public:
@@ -28,7 +28,7 @@ public:
 	TArray<UEntityDataAsset*> EntityData;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bGenerated;
+	bool bGenerated = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float LastSpawnSecondsElapsed;
@@ -43,10 +43,10 @@ public:
 	FVector EntryLocation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bRepeatSpawns;
+	bool bRepeatSpawns = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SpawnCooldownSeconds;
+	float SpawnCooldownSeconds = 5.0f;
 
 	bool operator<(ARoom const& rhs);
 
@@ -63,4 +63,6 @@ public:
 	void SpawnEntity();
 	UFUNCTION()
 	void CaptureSockets();
+	UFUNCTION()
+	float GetBoundsArea();
 };

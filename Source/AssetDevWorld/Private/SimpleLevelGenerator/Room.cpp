@@ -27,10 +27,8 @@ ARoom::ARoom()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Chunks = TArray<FGridChunk*>();
-	FVector RoomOrigin;
-	FVector RoomBoxExtent;
-	GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
-	BoundsArea = RoomBoxExtent.X * RoomBoxExtent.Y;
+	
+	BoundsArea = GetBoundsArea();
 
 	CaptureSockets();
 }
@@ -106,5 +104,13 @@ void ARoom::CaptureSockets()
 			}
 		}
 	}
+}
+
+float ARoom::GetBoundsArea()
+{
+	FVector RoomOrigin;
+	FVector RoomBoxExtent;
+	GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
+	return RoomBoxExtent.X * RoomBoxExtent.Y;
 }
 

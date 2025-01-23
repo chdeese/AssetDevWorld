@@ -22,7 +22,7 @@ AGameLevel::AGameLevel()
 	PrimaryActorTick.bCanEverTick = true;
 
 	bAlignEntry = false;
-	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
+	RoomsToSpawn = TArray<TSubclassOf<AActor>>();
 }
 
 AGameLevel::AGameLevel(FVector entryPosition)
@@ -36,8 +36,8 @@ AGameLevel::AGameLevel(FVector entryPosition)
 	PrimaryActorTick.bCanEverTick = true;
 
 	bAlignEntry = true;
-	m_entryPosition = entryPosition;
-	RoomsToSpawn = TArray<TSubclassOf<ARoom>>();
+	RoomsToSpawn = TArray<TSubclassOf<AActor>>();
+	EntryPosition = entryPosition;
 
 }
 
@@ -52,6 +52,7 @@ void AGameLevel::BeginPlay()
 		Params.Owner = this;
 
 		Grid = GetWorld()->SpawnActor<AGrid>(GetActorLocation(), FRotator::ZeroRotator, Params);
+		Grid->init(this, MaxWidth, MaxLength);
 
 		Warmup();
 		SelectRooms();
@@ -138,25 +139,28 @@ void AGameLevel::SelectRooms()
 	UniqueRoomArea = AssetRoomArea * UniqueRoomPercent;
 	AssetRoomArea -= UniqueRoomArea;
 
-	TSubclassOf<ARoom> RoomClass;
-	ARoom* Room;
+	FVector RoomOrigin;
+	FVector RoomBoxExtent;
+
+	FActorSpawnParameters Params;
+	TSubclassOf<AActor> RoomClass;
 	float RoomArea;
 	float RandomNum;
 	for (float CurrentFilledArea = 0; CurrentFilledArea < AssetRoomArea; CurrentFilledArea += RoomArea)
 	{
-		Room = nullptr;
 		RoomArea = 0;
 		if (!PriorityRooms.IsEmpty())
 		{
 			for (URoomDataAsset* PriorityRoomData : PriorityRooms)
 			{
-				RoomClass = PriorityRoomData->RoomAsset;
+				RoomClass = *PriorityRoomData->RoomAsset;
 				//casted only for BoundsArea float value
-				Room = Cast<ARoom>(RoomClass->GetDefaultObject());
-				RoomArea += Room->BoundsArea;
+
+				Cast<AActor>(RoomClass->GetDefaultObject())->GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
+				RoomArea += RoomBoxExtent.X * RoomBoxExtent.Y;
+
 				RoomsToSpawn.Add(RoomClass);
 			}
-			Room = nullptr;
 			PriorityRooms.Empty();
 			continue;
 		}
@@ -164,10 +168,12 @@ void AGameLevel::SelectRooms()
 
 		if (OptionalRooms.IsEmpty())
 			return;
-		RandomNum = FMath::RandRange(0, OptionalRooms.Num());
-		RoomsToSpawn.RemoveAt(RandomNum, EAllowShrinking::Yes);
+		RandomNum = FMath::RandRange(0, OptionalRooms.Num() - 1);
+		RoomClass = OptionalRooms[RandomNum]->RoomAsset;
+		OptionalRooms.RemoveAt(RandomNum, EAllowShrinking::Yes);
 
-		RoomArea += Room->BoundsArea;
+		Cast<AActor>(RoomClass->GetDefaultObject())->GetActorBounds(true, RoomOrigin, RoomBoxExtent, true);
+		RoomArea += RoomBoxExtent.X * RoomBoxExtent.Y;
 		RoomsToSpawn.Add(RoomClass);
 	}
 }
@@ -177,39 +183,55 @@ void AGameLevel::SpawnRooms()
 {
 	
 	//use vector math to place beginning room on border facing outwards, then get entry socket.
-	int RandomNum = FMath::RandRange(0, BeginningRooms.Num() < 0 ? 0 : BeginningRooms.Num() - 1);
+	int RandomNum;
 	FVector Offset = FVector::ZeroVector;
 	FActorSpawnParameters Params = FActorSpawnParameters();
+	Params.Owner = this;
 	FVector BeginningRoomOrigin;
 	FVector BeginningRoomBoxExtent;
 	GetActorBounds(true, BeginningRoomOrigin, BeginningRoomBoxExtent, true);
 
-	ARoom* BeginningRoom;
-	if (!BeginningRooms.IsEmpty())
+	AActor* BeginningRoom;
+	bool bFoundRoom = false;
+	while (!BeginningRooms.IsEmpty() && !bFoundRoom)
 	{
-		BeginningRoom = GetWorld()->SpawnActor<ARoom>(BeginningRooms[RandomNum]->RoomAsset, GetRandomBorderAlignedRoomPosition(BeginningRoomBoxExtent.X * 2, BeginningRoomBoxExtent.Y * 2), FRotator::ZeroRotator, Params);
-		RoomInstances.Add(BeginningRoom);
+		RandomNum = FMath::RandRange(0, BeginningRooms.Num() - 1);
+		if (BeginningRooms[RandomNum])
+		{
+			BeginningRoom = GetWorld()->SpawnActor<AActor>(BeginningRooms[RandomNum]->RoomAsset, GetRandomBorderAlignedRoomPosition(BeginningRoomBoxExtent.X * 2, BeginningRoomBoxExtent.Y * 2), FRotator::ZeroRotator, Params);
+			RoomInstances.Add(Cast<ARoom>(BeginningRoom));
+			bFoundRoom = true;
+		}
+		BeginningRooms.Remove(BeginningRooms[RandomNum]);
 	}
 	if (RoomsToSpawn.IsEmpty()) return;
 	// smallest -> largest (by area)
 	RoomsToSpawn.Sort();
-	for (TSubclassOf<ARoom> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty(); RoomsToSpawn.Remove(Room))
+	for (TSubclassOf<AActor> Room = RoomsToSpawn.Last(); !RoomsToSpawn.IsEmpty(); RoomsToSpawn.Remove(Room))
 	{
-		ARoom* RoomToSpawn = Room.GetDefaultObject();
-		FBoxSphereBounds Bounds = RoomToSpawn->GetComponentByClass<UStaticMeshComponent>()->Bounds;
+		AActor* RoomToSpawn = Room.GetDefaultObject();
+		if (!RoomToSpawn)
+			continue;
+		FVector BoundsOrigin;
+		FVector BoundsExtent;
+		RoomToSpawn->GetActorBounds(false, BoundsOrigin, BoundsExtent, true);
+
+		FBoxSphereBounds Bounds;
+		Bounds.Origin = BoundsOrigin;
+		Bounds.BoxExtent = BoundsExtent;
 
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = this;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		for (bool bCollisionDetected = true; bCollisionDetected; bCollisionDetected = IsValidRoomPosition(Bounds))
+		for (bool bCollisionDetected = true; bCollisionDetected; bCollisionDetected = !IsValidRoomPosition(Bounds))
 		{
 			Bounds.Origin = GetRandomBorderAlignedRoomPosition(Bounds.BoxExtent.X * 2, Bounds.BoxExtent.Y * 2);	
 		}
 
-		ARoom* SpawnedRoom = GetWorld()->SpawnActor<ARoom>(*Room, Bounds.Origin, FRotator::ZeroRotator, SpawnParams);
+		AActor* SpawnedRoom = GetWorld()->SpawnActor<AActor>(*Room, Bounds.Origin, FRotator::ZeroRotator, SpawnParams);
 
-		RoomInstances.Add(SpawnedRoom);
+		RoomInstances.Add(Cast<ARoom>(SpawnedRoom));
 	}
 }
 

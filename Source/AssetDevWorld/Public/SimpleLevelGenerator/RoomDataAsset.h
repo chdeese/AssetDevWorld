@@ -6,12 +6,11 @@
 #include "Engine/DataAsset.h"
 #include "RoomDataAsset.generated.h"
 
-class ARoom;
 
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class ASSETDEVWORLD_API URoomDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
@@ -19,5 +18,5 @@ class ASSETDEVWORLD_API URoomDataAsset : public UPrimaryDataAsset
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<ARoom> RoomAsset;
+	TSubclassOf<AActor> RoomAsset;
 };

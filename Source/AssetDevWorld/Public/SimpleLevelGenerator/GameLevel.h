@@ -6,14 +6,13 @@
 #include "GameFramework/Actor.h"
 #include "GameLevel.generated.h"
 
-class ARoom;
 class AGrid;
 struct FGridIterator;
 class URoomDataAsset;
 class URoomTemplateDataAsset;
 class UPassagewayDataAsset;
 
-UCLASS(Placeable)
+UCLASS(Blueprintable, BlueprintType)
 class ASSETDEVWORLD_API AGameLevel : public AActor
 {
 	GENERATED_BODY()
@@ -24,11 +23,11 @@ private:
 	UPROPERTY()
 	bool bBuildOnPlay;
 	UPROPERTY()
-	FVector m_entryPosition;
+	FVector EntryPosition;
 	UPROPERTY()
 	float UniqueRoomArea;
 	UPROPERTY()
-	TArray<TSubclassOf<ARoom>> RoomsToSpawn;
+	TArray<TSubclassOf<AActor>> RoomsToSpawn;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

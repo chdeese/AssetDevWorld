@@ -10,7 +10,7 @@ class UEntityDataAsset;
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class ASSETDEVWORLD_API UPassagewayDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()

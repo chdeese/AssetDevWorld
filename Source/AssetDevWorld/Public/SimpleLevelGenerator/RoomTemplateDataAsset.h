@@ -11,7 +11,7 @@ class UEntityDataAsset;
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class ASSETDEVWORLD_API URoomTemplateDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
