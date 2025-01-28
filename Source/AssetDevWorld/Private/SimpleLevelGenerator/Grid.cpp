@@ -208,6 +208,30 @@ FVector AGrid::NextDirectionTowards(FVector direction)
 	}
 }
 
+FGridChunkEdge* AGrid::GetRandomValidEdge()
+{
+	int RandNum;
+	bool bValid = false;
+
+	FGridChunkEdge* Edge = nullptr;
+	int EdgeCount = Iterator->Target->Edges.Num();
+	int TryCount = 0;
+	while(!bValid)
+	{
+		if (TryCount >= EdgeCount)
+			return nullptr;
+
+		RandNum = FMath::RandRange(0, Iterator->Target->Edges.Num() - 1);
+		Edge = Iterator->Target->Edges[RandNum];
+
+		if (Edge && Edge->Target)
+			bValid = true;
+
+		TryCount++;
+	}
+	return Edge;
+}
+
 //only works if axis aligned with the unreal world.
 void AGrid::ConnectAdjacentChunks(FGridChunk* Chunk1, FGridChunk* Chunk2)
 {
@@ -348,8 +372,8 @@ void AGrid::CarvePassageways(float MaxArea)
 		if (Iterator->Target->Edges.Num() == 0 || AttemptedEdges.Num() == Iterator->Target->Edges.Num())
 			Iterator->Target = Iterator->Target->Previous;
 
-		int RandNum = FMath::RandRange(0, Iterator->Target->Edges.Num() - 1);
-		FGridChunkEdge* Edge = Iterator->Target->Edges[RandNum];
+		FGridChunkEdge* Edge = GetRandomValidEdge();
+		if (!Edge) continue;
 		FGridChunkEdge EdgePast;
 		Edge->Target->GetEdge(EdgePast, Edge->Normal);
 		if (Edge->Target && EdgePast.Target && !Edge->Target->bVisited && !EdgePast.Target->bVisited)

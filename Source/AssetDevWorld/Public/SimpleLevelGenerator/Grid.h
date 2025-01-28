@@ -91,6 +91,7 @@ public:
 	FGridIterator* GetIterator();
 	FGridChunk* GetChunkNearest(FVector position);
 	FVector NextDirectionTowards(FVector direction);
+	FGridChunkEdge* GetRandomValidEdge();
 	void ConnectAdjacentChunks(FGridChunk* origin, FGridChunk* target);
 	bool AreAdjacent(FGridChunk* Chunk1, FGridChunk* Chunk2);
 	bool IsChunkWithinRoomBounds(ARoom* Room, FGridChunk* Chunk);
