@@ -101,5 +101,6 @@ public:
 	void ConnectDoorways();
 	void Cleanup();
 	void SpawnAssets();
-
+	FVector FindChunkCountExtentFromOrigin(FVector OriginPosition);
+	int ChunkCountDirection(Directions IterDirection);
 };

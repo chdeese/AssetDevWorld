@@ -202,9 +202,9 @@ FVector AGrid::NextDirectionTowards(FVector direction)
 	else
 	{
 		if (direction.Y > 0)
-			return IterDirections.FindRef(Directions::Up);
+			return IterDirections.FindRef(Directions::Forwards);
 		else
-			return IterDirections.FindRef(Directions::Down);
+			return IterDirections.FindRef(Directions::Backwards);
 	}
 }
 
@@ -310,11 +310,11 @@ void AGrid::AddRoom(ARoom* room)
 					TryStage++;
 					break;
 				case 2:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Up));
+					Iterator->Iterate(IterDirections.FindRef(Directions::Forwards));
 					TryStage++;
 					break;
 				case 3:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Down));
+					Iterator->Iterate(IterDirections.FindRef(Directions::Backwards));
 					TryStage++;
 					break;
 				case 4:
@@ -492,6 +492,69 @@ void AGrid::SpawnAssets()
 			}
 		}
 	}
+}
+
+FVector AGrid::FindChunkCountExtentFromOrigin(FVector OriginPosition)
+{
+	FGridChunk* OriginChunk = GetChunkNearest(OriginPosition);
+	
+	Iterator->Target = OriginChunk;
+	// 1 for origin
+	int ChunkCountX = 1;
+	int ChunkCountY = 1;
+
+	int AxisChunksCount = 0;
+	int DirectionCount = 0;
+
+	//count xNeg
+	Iterator->Target = OriginChunk;
+	DirectionCount = ChunkCountDirection(Directions::Left);
+	AxisChunksCount += DirectionCount;
+	
+	//count xPos
+	Iterator->Target = OriginChunk;
+	DirectionCount = ChunkCountDirection(Directions::Right);
+	//take smaller count
+	AxisChunksCount = AxisChunksCount > DirectionCount ? DirectionCount : AxisChunksCount;
+
+	ChunkCountX += AxisChunksCount;
+
+	AxisChunksCount = 0;
+	DirectionCount = 0;
+
+	//count yNeg
+	Iterator->Target = OriginChunk;
+	DirectionCount = ChunkCountDirection(Directions::Forwards);
+	AxisChunksCount += DirectionCount;
+
+	//count yPos
+	Iterator->Target = OriginChunk;
+	DirectionCount = ChunkCountDirection(Directions::Backwards);
+	//take smaller count
+	AxisChunksCount = AxisChunksCount > DirectionCount ? DirectionCount : AxisChunksCount;
+
+	ChunkCountY += AxisChunksCount;
+
+
+
+	return FVector(ChunkCountX, ChunkCountY, 0);
+}
+
+
+int AGrid::ChunkCountDirection(Directions IterDirection)
+{
+	int Count = 0;
+	FGridChunkEdge Edge;
+	//checks if the edge found is valid
+	while (Iterator->Iterate(IterDirections.FindRef(IterDirection)) && !Edge.Target->bVisited)
+		//checks for target and iterates if found
+	{
+		//sets edge for next loop check
+		Iterator->Target->GetEdge(Edge, IterDirections.FindRef(IterDirection));
+		//iteration was valid, iterate.
+		Count++;
+	}
+	return Count;
 }
 
 

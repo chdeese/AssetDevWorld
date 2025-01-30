@@ -30,6 +30,16 @@ ARoom::ARoom()
 	
 	BoundsArea = GetBoundsArea();
 
+	if (FindComponentByClass<UStaticMeshComponent>())
+	{
+		//rounded down in implicit conversion to int
+		ChunkCountWidth = FindComponentByClass<UStaticMeshComponent>()->Bounds.BoxExtent.X / ChunkRootCM;
+		ChunkCountLength = FindComponentByClass<UStaticMeshComponent>()->Bounds.BoxExtent.Y / ChunkRootCM;
+		//round up to fit chunks within bounds
+		ChunkCountWidth += 1;
+		ChunkCountLength += 1;
+
+	}
 	CaptureSockets();
 }
 

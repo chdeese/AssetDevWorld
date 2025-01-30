@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "GameLevel.generated.h"
 
+class ARoom;
 class AGrid;
 struct FGridIterator;
 class URoomDataAsset;
@@ -26,8 +27,6 @@ private:
 	FVector EntryPosition;
 	UPROPERTY()
 	float UniqueRoomArea;
-	UPROPERTY()
-	TArray<TSubclassOf<AActor>> RoomsToSpawn;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -37,7 +36,10 @@ public:
 	TArray<URoomTemplateDataAsset*> RoomTemplates;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<URoomDataAsset*> OptionalRooms;
+	TArray<URoomDataAsset*> RoomsToSpawn;	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<TSubclassOf<ARoom>> ReadyRooms;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<URoomDataAsset*> BeginningRooms;
@@ -94,37 +96,23 @@ public:
 	// creates a new game level
 	AGameLevel();
 
-	AGameLevel(FVector entryPosition);
-
 	virtual void BeginPlay() override;
-
-	FGridIterator* GetIterator();
 
 protected:
 	UFUNCTION(BlueprintCallable)
-	FVector GetRandomBorderAlignedRoomPosition(float Width, float Length);
+	bool IsValidRoomPosition(FBoxSphereBounds Bounds);	\
 	UFUNCTION(BlueprintCallable)
-	bool IsValidRoomPosition(FBoxSphereBounds Bounds);
+	TSubclassOf<AActor> GetRandomRoomWithinChunkCount(FBoxSphereBounds Bounds);
 	UFUNCTION(BlueprintCallable)
 	void Warmup();
 	UFUNCTION(BlueprintCallable)
-	void SelectRooms();
-	UFUNCTION(BlueprintCallable)
 	void SpawnRooms();
-	UFUNCTION(BlueprintCallable)
-	void GenerateNewRooms();
-	UFUNCTION(BlueprintCallable)
-	ARoom* GenerateNewRoom(AActor* OriginalOwner, FVector Position, FVector Scale, FRotator Rotation, URoomTemplateDataAsset* Template);
-	UFUNCTION(BlueprintCallable)
-	void CarvePassageways();
 	UFUNCTION(BlueprintCallable)
 	void ConnectRooms();
 	UFUNCTION(BlueprintCallable)
 	void Cleanup();
 	UFUNCTION(BlueprintCallable)
 	void Finalize();
-	UFUNCTION(BlueprintCallable)
-	void UpdateEntitySpawns();
 
 
 };

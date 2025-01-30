@@ -18,6 +18,15 @@ public:
 	TArray<FGridChunk*> Chunks;
 	UPROPERTY()
 	float BoundsArea = 0;
+
+	int ChunkRootCM = 150;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int ChunkCountWidth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int ChunkCountLength;
+
 	UFUNCTION(BlueprintCallable)
 	void SetSocketLocation(FVector& ReturnVector, FName SocketName);
 public:
@@ -65,4 +74,5 @@ public:
 	void CaptureSockets();
 	UFUNCTION()
 	float GetBoundsArea();
+
 };
