@@ -9,6 +9,7 @@
 class ARoom;
 class AGameLevel;
 
+
 USTRUCT()
 struct FGridChunkEdge
 {
@@ -53,8 +54,6 @@ class ASSETDEVWORLD_API AGrid : public AActor
 	
 public:
 	TArray<FGridChunk*> Chunks;
-	static const int ChunkRootCM = 150;
-	FGridIterator* Iterator;
 	FGridChunk* StartChunk;
 	AGameLevel* GameLevel;
 	AActor* EntryPositionActor;

@@ -36,7 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UEntityDataAsset*> EntityData;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	bool bGenerated = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -50,12 +50,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector EntryLocation;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bRepeatSpawns = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SpawnCooldownSeconds = 5.0f;
 
 	bool operator<(ARoom const& rhs);
 

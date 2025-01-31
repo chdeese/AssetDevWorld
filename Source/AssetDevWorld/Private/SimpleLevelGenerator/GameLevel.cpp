@@ -8,11 +8,6 @@
 
 AGameLevel::AGameLevel()
 {
-	//avalible in editor.
-	//not implemented
-	
-	//leaves a forshadowing area??
-	
 	//creates a new level at runtime.
 	bBuildOnPlay = true;
 
@@ -44,40 +39,6 @@ void AGameLevel::BeginPlay()
 		//Finalize();
 	}
 }
-
-
-//
-//FVector AGameLevel::GetRandomBorderAlignedRoomPosition(float Width, float Length)
-//{
-//	FVector RandomDirection = FVector(FMath::Rand32(), FMath::Rand32(), FMath::Rand32());
-//	RandomDirection = RandomDirection.GetSafeNormal();
-//	FVector RandomDirectionAbs = RandomDirection;
-//	if (RandomDirectionAbs.X < 0)
-//		RandomDirectionAbs.X = -RandomDirectionAbs.X;
-//	if (RandomDirectionAbs.Y < 0)
-//		RandomDirectionAbs.Y = -RandomDirectionAbs.Y;
-//	if (RandomDirectionAbs.Z < 0)
-//		RandomDirectionAbs.Z = -RandomDirectionAbs.Z;
-//
-//	float Min = GetActorLocation().X - ((MaxWidth - Width) / 2);
-//	float Max = GetActorLocation().X + ((MaxWidth - Width) / 2);
-//	float RandomXPosLevelAligned = FMath::RandRange(Min, Max);
-//	Min = GetActorLocation().Y - ((MaxLength - Length) / 2);
-//	Max = GetActorLocation().Y + ((MaxLength - Length) / 2);
-//	float RandomYPosLevelAligned = FMath::RandRange(Min, Max);
-//	if (RandomDirection.X > RandomDirection.Y)
-//		if (RandomDirection.X > 0)
-//			RandomXPosLevelAligned = GetActorLocation().X + ((MaxWidth - Width) / 2);
-//		else
-//			RandomXPosLevelAligned = GetActorLocation().X - ((MaxWidth - Width) / 2);
-//	else
-//		if (RandomDirection.Y > 0)
-//			RandomYPosLevelAligned = GetActorLocation().X + ((MaxLength - Length) / 2);
-//		else
-//			RandomYPosLevelAligned = GetActorLocation().X - ((MaxLength - Length) / 2);
-//
-//	return GetActorLocation() + FVector(RandomXPosLevelAligned, RandomYPosLevelAligned, 0);
-//}
 
 bool AGameLevel::IsValidRoomPosition(FBoxSphereBounds Bounds)
 {
@@ -124,10 +85,10 @@ void AGameLevel::Warmup()
 void AGameLevel::SpawnRooms()
 {
 
-	float RoomHeight = 5 * AGrid::ChunkRootCM;
+	float RoomHeight = 5 * ChunkRootCM;
 	float OriginZ = 5;
 
-	float BorderOffset = 2.5f * AGrid::ChunkRootCM;
+	float BorderOffset = 2.5f * ChunkRootCM;
 
 	//check length and width of a randomly selected position.
 	int RoomPlacementAttempts = 1000;

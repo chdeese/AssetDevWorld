@@ -29,35 +29,18 @@ private:
 	float UniqueRoomArea;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<URoomDataAsset*> RoomsToSpawn;
+
+	UPROPERTY(BlueprintReadOnly)
 	TArray<ARoom*> RoomInstances;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<URoomTemplateDataAsset*> RoomTemplates;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<URoomDataAsset*> RoomsToSpawn;	
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly)
 	TArray<TSubclassOf<ARoom>> ReadyRooms;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<URoomDataAsset*> BeginningRooms;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<URoomDataAsset*> PriorityRooms;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<UPassagewayDataAsset*> PassagewayTemplates;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly)
 	AGrid* Grid;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int MaxActiveEntities;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Density;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int MaxWidth;
@@ -66,31 +49,7 @@ public:
 	int MaxLength;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bSpawnUniqueRooms;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector UniqueRoomChunksMin;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FVector UniqueRoomChunksMax;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bGenerateCeilingsForRoomsAndPassageways;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float UniqueRoomPercent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float PassagewayAreaPercent = 0.25f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool bFlatMode;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool b3DMode;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int MaxHeight = 0;
+	int ChunkRootCM = 150;
 
 public:	
 	// creates a new game level

@@ -9,11 +9,6 @@
 
 AGrid::Directions AGrid::RandomDirection(int Dimensions = 0)
 {
-	if (Dimensions != 2 && Dimensions != 3) 
-	{
-		__debugbreak();
-		return Directions::Backwards;
-	}
 	Dimensions *= 2;
 	switch (FMath::RandRange(0, Dimensions - 1))
 	{
@@ -41,14 +36,11 @@ void AGrid::BeginPlay()
 
 AGrid::AGrid()
 {
-	Iterator = new FGridIterator();
 	Chunks = TArray<FGridChunk*>();
 }
 
 AGrid::~AGrid()
 {
-	delete Iterator;
-	//delete struct stuff.
 }
 
 
@@ -63,21 +55,22 @@ void AGrid::init(AGameLevel* level, int width, int length)
 	};
 
 	// implicit casting lost data is accounted for
-	int CubeCountX = width / ChunkRootCM;
-	int CubeCountY = length / ChunkRootCM;
+	int CubeCountX = width / GameLevel->ChunkRootCM;
+	int CubeCountY = length / GameLevel->ChunkRootCM;
 
 	NextChunk NextChunkDirection = NextChunk::Right;
-	FVector NewChunkPosition = this->GetActorLocation() - FVector(ChunkRootCM * (CubeCountX / 2.0), ChunkRootCM * (CubeCountY / 2.0), 0);
+	FVector NewChunkPosition = this->GetActorLocation() - FVector(GameLevel->ChunkRootCM * (CubeCountX / 2.0), GameLevel->ChunkRootCM * (CubeCountY / 2.0), 0);
 	//offset towards center of Chunk area.
-	NewChunkPosition.X += ChunkRootCM / 2.0;
-	NewChunkPosition.Y += ChunkRootCM / 2.0;
+	NewChunkPosition.X += GameLevel->ChunkRootCM / 2.0;
+	NewChunkPosition.Y += GameLevel->ChunkRootCM / 2.0;
 
 	int CurrentRow = 0;
 	int CurrentColumn = 0;
 	bool bGridFilled = false;
 	bool bForwards = true;
 	bool bFirstIteration = true;
-	FGridChunk* lastMadeChunk = nullptr;
+	FGridIterator* Iter = new FGridIterator();
+	FGridChunk* LastMadeChunk = nullptr;
 	while (!bGridFilled)
 	{
 		//exits loop
@@ -87,57 +80,69 @@ void AGrid::init(AGameLevel* level, int width, int length)
 			continue;
 		}
 
-		FGridChunk* newChunk = new FGridChunk();
-		newChunk->Position = NewChunkPosition;
-		newChunk->Previous = nullptr;
-		newChunk->bVisited = false;
-		newChunk->bSpawned = false;
+		FGridChunk* NewChunk = new FGridChunk();
+		NewChunk->Position = NewChunkPosition;
+		NewChunk->Previous = nullptr;
+		NewChunk->bVisited = false;
+		NewChunk->bSpawned = false;
 		{
-			newChunk->Edges = TArray<FGridChunkEdge*>();
+			NewChunk->Edges = TArray<FGridChunkEdge*>();
 
 			//right
-			FGridChunkEdge* newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(1, 0, 0);
-			newChunk->Edges.Add(newEdge);
+			FGridChunkEdge* NewEdge = new FGridChunkEdge();
+			NewEdge->Target = nullptr;
+			NewEdge->Normal = FVector(1, 0, 0);
+			NewChunk->Edges.Add(NewEdge);
 
 			//left
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(-1, 0, 0);
-			newChunk->Edges.Add(newEdge);
+			NewEdge = new FGridChunkEdge();
+			NewEdge->Target = nullptr;
+			NewEdge->Normal = FVector(-1, 0, 0);
+			NewChunk->Edges.Add(NewEdge);
 
 			//forwards
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(0, 1, 0);
-			newChunk->Edges.Add(newEdge);
+			NewEdge = new FGridChunkEdge();
+			NewEdge->Target = nullptr;
+			NewEdge->Normal = FVector(0, 1, 0);
+			NewChunk->Edges.Add(NewEdge);
 
 			//backwards
-			newEdge = new FGridChunkEdge();
-			newEdge->Target = nullptr;
-			newEdge->Normal = FVector(0, -1, 0);
-			newChunk->Edges.Add(newEdge);
+			NewEdge = new FGridChunkEdge();
+			NewEdge->Target = nullptr;
+			NewEdge->Normal = FVector(0, -1, 0);
+			NewChunk->Edges.Add(NewEdge);
 		}
 
 		//set start chunk if this is the first iteration
-		if (bFirstIteration) StartChunk = newChunk, bFirstIteration = !bFirstIteration;
+		if (bFirstIteration)
+		{
+			StartChunk = NewChunk;
+			bFirstIteration = !bFirstIteration;
+		}
 
 		// connects last made chunk
-		if (lastMadeChunk) 
-			ConnectAdjacentChunks(lastMadeChunk, newChunk);
+		if (LastMadeChunk) 
+			ConnectAdjacentChunks(LastMadeChunk, NewChunk);
 
 		// connects lower adjacent chunks
 		if (CurrentRow > 0 && CurrentColumn != 0 && CurrentColumn != CubeCountX - 1)
 		{
-			Iterator->Target = lastMadeChunk;
+			Iter->Target = LastMadeChunk;
 			//iterate in approximate normal direction
-			Iterator->Iterate((newChunk->Position - lastMadeChunk->Position).GetUnsafeNormal());
+			Iter->Iterate((NewChunk->Position - LastMadeChunk->Position).GetUnsafeNormal());
 
-			ConnectAdjacentChunks(Iterator->Target, newChunk);
+			ConnectAdjacentChunks(Iter->Target, NewChunk);
+		}
+		else
+		{
+			Iter->Target = LastMadeChunk;
+			//iterate in approximate normal direction
+			Iter->Iterate(FVector(0, 1, 0));
+
+			ConnectAdjacentChunks(Iter->Target, NewChunk);
 		}
 
-		Chunks.Add(newChunk);
+		Chunks.Add(NewChunk);
 
 		//if heading out of bounds head forward to the next row
 		if (CurrentColumn == CubeCountX - 1 || CurrentColumn == 0)
@@ -165,25 +170,29 @@ void AGrid::init(AGameLevel* level, int width, int length)
 
 FGridIterator* AGrid::GetIterator()
 {
-	if (!Iterator->Target)
-		Iterator->Target = StartChunk;
-	return Iterator;
+	FGridIterator* NewIter = new FGridIterator();
+
+	NewIter->Target = StartChunk;
+
+	return NewIter;
 }
 
 FGridChunk* AGrid::GetChunkNearest(FVector position)
 {
-	Iterator->Target = StartChunk;
+	FGridIterator* NewIter = new FGridIterator();
+
+	NewIter->Target = StartChunk;
 
 	bool NearPosition = false;
 	FGridChunk* Chunk = StartChunk;
 	while (!NearPosition)
 	{
-		FVector VectorTo = position - Iterator->Target->Position;
-		FVector ChunkBorderPosTowardsPos = VectorTo.GetUnsafeNormal() * ChunkRootCM;
+		FVector VectorTo = position - NewIter->Target->Position;
+		FVector ChunkBorderPosTowardsPos = VectorTo.GetUnsafeNormal() * GameLevel->ChunkRootCM;
 		if (VectorTo.Size() < ChunkBorderPosTowardsPos.Size())
 		{
-			Iterator->Iterate(NextDirectionTowards(position));
-			Chunk = Iterator->Target;
+			NewIter->Iterate(NextDirectionTowards(position));
+			Chunk = NewIter->Target;
 			NearPosition = true;
 		}
 	}
@@ -213,16 +222,17 @@ FGridChunkEdge* AGrid::GetRandomValidEdge()
 	int RandNum;
 	bool bValid = false;
 
+	FGridIterator* NewIter = new FGridIterator();
 	FGridChunkEdge* Edge = nullptr;
-	int EdgeCount = Iterator->Target->Edges.Num();
+	int EdgeCount = NewIter->Target->Edges.Num();
 	int TryCount = 0;
 	while(!bValid)
 	{
 		if (TryCount >= EdgeCount)
 			return nullptr;
 
-		RandNum = FMath::RandRange(0, Iterator->Target->Edges.Num() - 1);
-		Edge = Iterator->Target->Edges[RandNum];
+		RandNum = FMath::RandRange(0, NewIter->Target->Edges.Num() - 1);
+		Edge = NewIter->Target->Edges[RandNum];
 
 		if (Edge && Edge->Target)
 			bValid = true;
@@ -278,8 +288,7 @@ bool AGrid::IsChunkWithinRoomBounds(ARoom* Room, FGridChunk* Chunk)
 	GetActorBounds(false, RoomWorldPosition, RoomExtent, true);
 	bool bChunkIsWithinXAxis = Chunk->Position.X < RoomWorldPosition.X + RoomExtent.X && Chunk->Position.X > RoomWorldPosition.X - RoomExtent.X ? true : false;
 	bool bChunkIsWithinYAxis = Chunk->Position.Y < RoomWorldPosition.Y + RoomExtent.Y && Chunk->Position.Y > RoomWorldPosition.Y - RoomExtent.Y ? true : false;
-	bool bChunkIsWithinZAxis = Chunk->Position.Z < RoomWorldPosition.Z + RoomExtent.Z && Chunk->Position.Z > RoomWorldPosition.Z - RoomExtent.Z ? true : false;
-	return GameLevel->b3DMode ? bChunkIsWithinXAxis && bChunkIsWithinYAxis && bChunkIsWithinZAxis : bChunkIsWithinXAxis && bChunkIsWithinYAxis;
+	return bChunkIsWithinXAxis && bChunkIsWithinYAxis;
 }
 
 bool AGrid::ShouldBeReserved(FGridChunk* Chunk, ARoom* Room)
@@ -289,12 +298,13 @@ bool AGrid::ShouldBeReserved(FGridChunk* Chunk, ARoom* Room)
 
 void AGrid::AddRoom(ARoom* room)
 {
+	FGridIterator* NewIter = new FGridIterator();
 	FGridChunk* LastChunk = nullptr;
-	int RoomChunksCount = room->BoundsArea / ChunkRootCM;
+	int RoomChunksCount = room->BoundsArea / GameLevel->ChunkRootCM;
 	for (float ChunksVisited = 0; ChunksVisited >= RoomChunksCount; ChunksVisited)
 	{
 		if (ChunksVisited == 0)
-			Iterator->Target = GetChunkNearest(room->GetActorLocation());
+			NewIter->Target = GetChunkNearest(room->GetActorLocation());
 		else
 		{
 			int DirectionsToTryCount = 4;
@@ -306,30 +316,30 @@ void AGrid::AddRoom(ARoom* room)
 				switch (TryStage)
 				{
 				case 1:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Right));
+					NewIter->Iterate(IterDirections.FindRef(Directions::Right));
 					TryStage++;
 					break;
 				case 2:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Forwards));
+					NewIter->Iterate(IterDirections.FindRef(Directions::Forwards));
 					TryStage++;
 					break;
 				case 3:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Backwards));
+					NewIter->Iterate(IterDirections.FindRef(Directions::Backwards));
 					TryStage++;
 					break;
 				case 4:
-					Iterator->Iterate(IterDirections.FindRef(Directions::Left));
+					NewIter->Iterate(IterDirections.FindRef(Directions::Left));
 					TryStage++;
 					break;
 				default:
 					if (LastChunk->Previous)
 					{
-						Iterator->Target = LastChunk->Previous;
+						NewIter->Target = LastChunk->Previous;
 						break;
 					}
 					if (LastChunk != GetChunkNearest(room->GetActorLocation()))
 					{
-						Iterator->Target = GetChunkNearest(room->GetActorLocation());
+						NewIter->Target = GetChunkNearest(room->GetActorLocation());
 						break;
 					}
 					else
@@ -338,20 +348,20 @@ void AGrid::AddRoom(ARoom* room)
 				}
 			}
 
-			if (!ShouldBeReserved(Iterator->Target, room))
+			if (!ShouldBeReserved(NewIter->Target, room))
 				continue;
 
 			bDirectionChoiceResolved = true;
 		}
-		Iterator->Target->bVisited = true;
+		NewIter->Target->bVisited = true;
 		//room should already be spawned/generated
-		Iterator->Target->bSpawned = true;
+		NewIter->Target->bSpawned = true;
 
-		Chunks.Add(Iterator->Target);
+		Chunks.Add(NewIter->Target);
 		ChunksVisited++;
 
-		Iterator->Target->Previous = LastChunk; /*nullptr if first time*/
-		LastChunk = Iterator->Target;
+		NewIter->Target->Previous = LastChunk; /*nullptr if first time*/
+		LastChunk = NewIter->Target;
 	}
 }
 
@@ -359,18 +369,20 @@ void AGrid::CarvePassageways(float MaxArea)
 {
 	if (!StartChunk) return;
 		
-	Iterator->Target = StartChunk;
+	FGridIterator* NewIter = new FGridIterator();
+
+	NewIter->Target = StartChunk;
 	//finds a unvisited chunk
-	while (Iterator->Target->bVisited)
-		Iterator->Iterate(NextDirectionTowards(GameLevel->GetActorLocation()));
+	while (NewIter->Target->bVisited)
+		NewIter->Iterate(NextDirectionTowards(GameLevel->GetActorLocation()));
 
 	float TotalVisitedArea = 0;
-	float SqArea = ChunkRootCM * ChunkRootCM;
+	float SqArea = GameLevel->ChunkRootCM * GameLevel->ChunkRootCM;
 	TArray<FGridChunkEdge*> AttemptedEdges = TArray<FGridChunkEdge*>();
 	while (TotalVisitedArea < MaxArea)
 	{
-		if (Iterator->Target->Edges.Num() == 0 || AttemptedEdges.Num() == Iterator->Target->Edges.Num())
-			Iterator->Target = Iterator->Target->Previous;
+		if (NewIter->Target->Edges.Num() == 0 || AttemptedEdges.Num() == NewIter->Target->Edges.Num())
+			NewIter->Target = NewIter->Target->Previous;
 
 		FGridChunkEdge* Edge = GetRandomValidEdge();
 		if (!Edge) continue;
@@ -381,7 +393,7 @@ void AGrid::CarvePassageways(float MaxArea)
 			Edge->Target->bVisited = true;
 			TotalVisitedArea += SqArea;
 
-			Iterator->Target = Edge->Target;
+			NewIter->Target = Edge->Target;
 
 			if (!AttemptedEdges.IsEmpty())
 				AttemptedEdges.Empty();
@@ -389,7 +401,7 @@ void AGrid::CarvePassageways(float MaxArea)
 		else
 			if (!Edge->Target)
 			{
-				Iterator->Target->Edges.Remove(Edge);
+				NewIter->Target->Edges.Remove(Edge);
 				delete Edge;
 			}
 			else
@@ -402,14 +414,17 @@ void AGrid::ConnectDoorways()
 {
 	if (GameLevel->RoomInstances.IsEmpty())
 		return;
+
+	FGridIterator* NewIter = new FGridIterator();
+
 	for (auto i = GameLevel->RoomInstances.begin(); i != GameLevel->RoomInstances.end(); ++i)
 	{
 		ARoom* CurrentRoom = (*i);
 		for (auto j = CurrentRoom->DoorLocations.begin(); j != CurrentRoom->DoorLocations.end(); ++j)
 		{
-			Iterator->Target = GetChunkNearest(*j);
+			NewIter->Target = GetChunkNearest(*j);
 
-			for (auto l = Iterator->Target->Edges.begin(); l != Iterator->Target->Edges.end(); ++l)
+			for (auto l = NewIter->Target->Edges.begin(); l != NewIter->Target->Edges.end(); ++l)
 			{
 				FGridChunkEdge PassagewayEdge;
 				(*l)->Target->GetEdge(PassagewayEdge, (*l)->Normal);
@@ -417,7 +432,7 @@ void AGrid::ConnectDoorways()
 				if (!IsChunkWithinRoomBounds(CurrentRoom, (*l)->Target) && bPasswayDetected)
 				{
 					(*l)->Target->bVisited = true;
-					Iterator->Target->bVisited = true;
+					NewIter->Target->bVisited = true;
 				}
 			}
 		}
@@ -444,61 +459,63 @@ void AGrid::Cleanup()
 void AGrid::SpawnAssets()
 {
 	Cleanup();
-	for (FGridChunk* Chunk : Chunks)
-	{
-		int RandNum = FMath::RandRange(0, GameLevel->PassagewayTemplates.Num() - 1);
-		UPassagewayDataAsset* Template = GameLevel->PassagewayTemplates[RandNum];
+	//for (FGridChunk* Chunk : Chunks)
+	//{
+	//	int RandNum = FMath::RandRange(0, GameLevel->PassagewayTemplates.Num() - 1);
+	//	UPassagewayDataAsset* Template = GameLevel->PassagewayTemplates[RandNum];
 
-		UWorld* World = GetWorld();
-		UClass* ActorSubclass = Template->FloorAsset;
-		AActor* Floor = World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
-		ActorSubclass = Template->CeilingAsset;
-		if (GameLevel->bGenerateCeilingsForRoomsAndPassageways && ActorSubclass != nullptr)
-			World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
-		FVector Direction = FVector::Zero();
-		for (int i = 0; i < 4; i++)
-		{
-			Direction = FVector::Zero();
-			switch (i)
-			{
-			case 0:
-				Direction = IterDirections.FindRef(Directions::Forwards);
-				break;
-			case 1:
-				Direction = IterDirections.FindRef(Directions::Backwards);
-				break;
-			case 2:
-				Direction = IterDirections.FindRef(Directions::Left);
-				break;
-			case 3:
-				Direction = IterDirections.FindRef(Directions::Right);
-				break;
-			}
+	//	UWorld* World = GetWorld();
+	//	UClass* ActorSubclass = Template->FloorAsset;
+	//	AActor* Floor = World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
+	//	ActorSubclass = Template->CeilingAsset;
+	//	if (GameLevel->bGenerateCeilingsForRoomsAndPassageways && ActorSubclass != nullptr)
+	//		World->SpawnActor<AActor>(ActorSubclass, Chunk->Position, FRotator::ZeroRotator);
+	//	FVector Direction = FVector::Zero();
+	//	for (int i = 0; i < 4; i++)
+	//	{
+	//		Direction = FVector::Zero();
+	//		switch (i)
+	//		{
+	//		case 0:
+	//			Direction = IterDirections.FindRef(Directions::Forwards);
+	//			break;
+	//		case 1:
+	//			Direction = IterDirections.FindRef(Directions::Backwards);
+	//			break;
+	//		case 2:
+	//			Direction = IterDirections.FindRef(Directions::Left);
+	//			break;
+	//		case 3:
+	//			Direction = IterDirections.FindRef(Directions::Right);
+	//			break;
+	//		}
 
-			FGridChunkEdge Edge;
-			Chunk->GetEdge(Edge, Direction);
+	//		FGridChunkEdge Edge;
+	//		Chunk->GetEdge(Edge, Direction);
 
-			//if we can not navigate in this direction, place an asset
-			if (Edge.Target == nullptr)
-			{
-				FActorSpawnParameters Params = FActorSpawnParameters();
-				Params.Owner = Floor;
+	//		//if we can not navigate in this direction, place an asset
+	//		if (Edge.Target == nullptr)
+	//		{
+	//			FActorSpawnParameters Params = FActorSpawnParameters();
+	//			Params.Owner = Floor;
 
-				FVector NewLocation = Chunk->Position + (Direction * (ChunkRootCM / 2));
-				FRotator NewRotation = FRotationMatrix::MakeFromX((Chunk->Position - NewLocation).GetUnsafeNormal()).Rotator();
+	//			FVector NewLocation = Chunk->Position + (Direction * (GameLevel->ChunkRootCM / 2));
+	//			FRotator NewRotation = FRotationMatrix::MakeFromX((Chunk->Position - NewLocation).GetUnsafeNormal()).Rotator();
 
-				ActorSubclass = Template->WallAsset;
-				World->SpawnActor<AActor>(ActorSubclass, NewLocation, NewRotation, Params);
-			}
-		}
-	}
+	//			ActorSubclass = Template->WallAsset;
+	//			World->SpawnActor<AActor>(ActorSubclass, NewLocation, NewRotation, Params);
+	//		}
+	/*	}
+	}*/
 }
 
 FVector AGrid::FindChunkCountExtentFromOrigin(FVector OriginPosition)
 {
 	FGridChunk* OriginChunk = GetChunkNearest(OriginPosition);
 	
-	Iterator->Target = OriginChunk;
+	FGridIterator* NewIter = new FGridIterator();
+
+	NewIter->Target = OriginChunk;
 	// 1 for origin
 	int ChunkCountX = 1;
 	int ChunkCountY = 1;
@@ -507,12 +524,12 @@ FVector AGrid::FindChunkCountExtentFromOrigin(FVector OriginPosition)
 	int DirectionCount = 0;
 
 	//count xNeg
-	Iterator->Target = OriginChunk;
+	NewIter->Target = OriginChunk;
 	DirectionCount = ChunkCountDirection(Directions::Left);
 	AxisChunksCount += DirectionCount;
 	
 	//count xPos
-	Iterator->Target = OriginChunk;
+	NewIter->Target = OriginChunk;
 	DirectionCount = ChunkCountDirection(Directions::Right);
 	//take smaller count
 	AxisChunksCount = AxisChunksCount > DirectionCount ? DirectionCount : AxisChunksCount;
@@ -523,12 +540,12 @@ FVector AGrid::FindChunkCountExtentFromOrigin(FVector OriginPosition)
 	DirectionCount = 0;
 
 	//count yNeg
-	Iterator->Target = OriginChunk;
+	NewIter->Target = OriginChunk;
 	DirectionCount = ChunkCountDirection(Directions::Forwards);
 	AxisChunksCount += DirectionCount;
 
 	//count yPos
-	Iterator->Target = OriginChunk;
+	NewIter->Target = OriginChunk;
 	DirectionCount = ChunkCountDirection(Directions::Backwards);
 	//take smaller count
 	AxisChunksCount = AxisChunksCount > DirectionCount ? DirectionCount : AxisChunksCount;
@@ -545,12 +562,13 @@ int AGrid::ChunkCountDirection(Directions IterDirection)
 {
 	int Count = 0;
 	FGridChunkEdge Edge;
+	FGridIterator* NewIter = new FGridIterator();
 	//checks if the edge found is valid
-	while (Iterator->Iterate(IterDirections.FindRef(IterDirection)) && !Edge.Target->bVisited)
+	while (NewIter->Iterate(IterDirections.FindRef(IterDirection)) && !Edge.Target->bVisited)
 		//checks for target and iterates if found
 	{
 		//sets edge for next loop check
-		Iterator->Target->GetEdge(Edge, IterDirections.FindRef(IterDirection));
+		NewIter->Target->GetEdge(Edge, IterDirections.FindRef(IterDirection));
 		//iteration was valid, iterate.
 		Count++;
 	}
