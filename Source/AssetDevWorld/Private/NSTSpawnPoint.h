@@ -20,6 +20,16 @@ public:
 	UPROPERTY(EditAnywhere)
 	UNSTActorSpawnGroup* ActorBlueprints;
 
+	UPROPERTY(EditAnywhere)
+	bool bRepeatSpawns = false;
+
+	UPROPERTY(EditAnywhere)
+	float RepeatCooldown = 5.0f;
+
+	float ElapsedSinceSpawn;
+
+	int ActorSpawnIndex = -1;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

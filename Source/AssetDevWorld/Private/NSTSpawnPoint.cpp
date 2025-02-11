@@ -22,8 +22,11 @@ void ANSTSpawnPoint::BeginPlay()
 
 bool ANSTSpawnPoint::SpawnActor()
 {
-	int RandomIndex = FMath::RandRange(0, ActorBlueprints->Blueprints.Num() - 1);
-	UClass* BP = ActorBlueprints->Blueprints[RandomIndex].Get();
+	// -1 on awake
+	if(ActorSpawnIndex < 0)
+		ActorSpawnIndex = FMath::RandRange(0, ActorBlueprints->Blueprints.Num() - 1);
+
+	UClass* BP = ActorBlueprints->Blueprints[ActorSpawnIndex].Get();
 
 	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(BP, GetActorLocation(), GetActorRotation(), FActorSpawnParameters());
 	if(!SpawnedActor)
@@ -38,5 +41,13 @@ void ANSTSpawnPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (ElapsedSinceSpawn > RepeatCooldown 
+		&& bRepeatSpawns)
+	{
+		if(SpawnActor())
+			ElapsedSinceSpawn = 0;
+	}
+	else
+		ElapsedSinceSpawn += DeltaTime;
 }
 
