@@ -22,7 +22,7 @@ public:
 	TArray<ANSTSpawnPoint*> SpawnPoints;
 
 	UPROPERTY(EditAnywhere)
-	float ForcedCooldownLength = 0.1f;
+	float ForcedCooldownLength;
 
 public:	
 	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
