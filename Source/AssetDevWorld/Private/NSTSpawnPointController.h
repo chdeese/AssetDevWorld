@@ -21,24 +21,25 @@ public:
 	UPROPERTY(EditAnywhere)
 	TArray<ANSTSpawnPoint*> SpawnPoints;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_AppendGroups)
-	bool bSingleAppendedGroup;
-
-	bool bTryAppendGroups = false;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	UPROPERTY(EditAnywhere)
+	float ForcedCooldownLength;
 
 public:	
-	// Sets default values for this actor's properties
-	ANSTSpawnPointController();
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void CombineAllGroups();
 
-	UFUNCTION()
-	void OnRep_AppendGroups();
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void StopAllRepeating();	
+	
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void StopAllRepeatSelection();
 
-	UFUNCTION()
-	bool AppendGroups();
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void ForceAllRepeat();
+
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void ForceAllRepeatSelection();
+
+	UFUNCTION(CallInEditor, Category = "NSTSpawnPointController")
+	void ForceSetAllCooldowns();
 };
