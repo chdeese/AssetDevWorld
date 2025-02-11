@@ -22,12 +22,6 @@ void ANSTSpawnPoint::BeginPlay()
 
 bool ANSTSpawnPoint::SpawnActor()
 {
-	if (!ActorBlueprints)
-		return false;
-
-	if (ActorBlueprints->Blueprints.Num() < 1)
-		return false;
-
 	// -1 on awake
 	if(bRepeatSelect || ActorSpawnIndex < 0)
 		ActorSpawnIndex = FMath::RandRange(0, ActorBlueprints->Blueprints.Num() - 1);
