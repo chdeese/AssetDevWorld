@@ -23,7 +23,7 @@ void ANSTSpawnPoint::BeginPlay()
 bool ANSTSpawnPoint::SpawnActor()
 {
 	// -1 on awake
-	if(ActorSpawnIndex < 0)
+	if(bRepeatSelect || ActorSpawnIndex < 0)
 		ActorSpawnIndex = FMath::RandRange(0, ActorBlueprints->Blueprints.Num() - 1);
 
 	UClass* BP = ActorBlueprints->Blueprints[ActorSpawnIndex].Get();
@@ -42,7 +42,7 @@ void ANSTSpawnPoint::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	if (ElapsedSinceSpawn > RepeatCooldown 
-		&& bRepeatSpawns)
+		&& bRepeatSpawns == true)
 	{
 		if(SpawnActor())
 			ElapsedSinceSpawn = 0;

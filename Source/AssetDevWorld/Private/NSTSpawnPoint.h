@@ -24,10 +24,15 @@ public:
 	bool bRepeatSpawns = false;
 
 	UPROPERTY(EditAnywhere)
+	bool bRepeatSelect = false;
+
+	UPROPERTY(EditAnywhere)
 	float RepeatCooldown = 5.0f;
 
+	UPROPERTY(BlueprintReadOnly)
 	float ElapsedSinceSpawn;
 
+	UPROPERTY(BlueprintReadOnly)
 	int ActorSpawnIndex = -1;
 
 protected:
