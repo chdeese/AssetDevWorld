@@ -9,7 +9,6 @@ ANSTSpawnPoint::ANSTSpawnPoint()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 // Called when the game starts or when spawned
@@ -34,7 +33,16 @@ bool ANSTSpawnPoint::SpawnActor()
 
 	UClass* BP = ActorBlueprints->Blueprints[ActorSpawnIndex].Get();
 
-	AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(BP, GetActorLocation(), GetActorRotation(), FActorSpawnParameters());
+	AActor* SpawnedActor;
+	
+	if (IsChildActor())
+	{
+		FVector ParentPosition = GetParentActor()->GetActorLocation();
+		SpawnedActor = GetWorld()->SpawnActor<AActor>(BP, ParentPosition + GetActorLocation(), GetActorRotation(), FActorSpawnParameters());
+	}
+	else
+		SpawnedActor = GetWorld()->SpawnActor<AActor>(BP, GetActorLocation(), GetActorRotation(), FActorSpawnParameters());
+
 	if(!SpawnedActor)
 		//return false if failed.
 		return false;

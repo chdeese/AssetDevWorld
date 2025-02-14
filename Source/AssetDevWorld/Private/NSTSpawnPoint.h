@@ -14,19 +14,17 @@ class ANSTSpawnPoint : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
-	ANSTSpawnPoint();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UNSTActorSpawnGroup* ActorBlueprints;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition=true))
 	bool bRepeatSpawns = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "bRepeatSpawns"))
 	bool bRepeatSelect = false;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition="bRepeatSpawns", Units="s"))
 	float RepeatCooldown = 5.0f;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -40,6 +38,8 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
+	// Sets default values for this actor's properties
+	ANSTSpawnPoint();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
